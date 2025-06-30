@@ -1,0 +1,14 @@
+   # Ignora la directory dell'ambiente virtuale
+venv/
+
+   # Ignora la cartella dei bytecode
+__pycache__/
+
+   # Ignora i file di log
+*.log
+
+   # Ignora i file .env
+*.venv
+
+   # Ignora i file di database
+*.db
