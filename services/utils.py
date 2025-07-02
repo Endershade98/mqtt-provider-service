@@ -16,15 +16,15 @@ def setup_logging():
 # Initialize logging
 logger = setup_logging()
 
-def log_function_call(func):
+def log_func_calls(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         try:
-            logger.info(f"Calling function: {func.__name__} with args: {args} and kwargs: {kwargs}")
+            logging.info(f"Calling function: {func.__name__} with args: {args} and kwargs: {kwargs}")
             result = func(*args, **kwargs)
-            logger.info(f"Function {func.__name__} returned: {result}")
+            logging.info(f"Function {func.__name__} returned: {result}")
             return result
         except Exception as e:
-            logger.exception(f"Exception in function {func.__name__}: {e}")
+            logging.exception(f"Exception in function {func.__name__}: {e}")
             raise
     return wrapper

@@ -12,3 +12,5 @@ __pycache__/
 
    # Ignora i file di database
 *.db
+
+new_main.py

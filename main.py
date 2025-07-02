@@ -1,4 +1,4 @@
-from mqtt_client_service.subscriber import Subscriber
+from lib.mqtt_client.subscriber import Subscriber
 import logging
 
 def main():
