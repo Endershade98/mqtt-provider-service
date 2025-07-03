@@ -1,16 +1,22 @@
-   # Ignora la directory dell'ambiente virtuale
+# Ignora la directory dell'ambiente virtuale
 venv/
 
-   # Ignora la cartella dei bytecode
+# Ignora la cartella dei bytecode
 __pycache__/
 
-   # Ignora i file di log
+# Ignora i file di log
 *.log
 
-   # Ignora i file .env
+# Ignora i file .env
 *.venv
 
-   # Ignora i file di database
+# Ignora i file di database
 *.db
-
+# ignore new_main.py
 new_main.py
+# ignore config files
+config/
+.env
+
+# Pytest cache
+.pytest_cache/

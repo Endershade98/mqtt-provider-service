@@ -1,22 +1,17 @@
 from lib.mqtt_client.subscriber import Subscriber
 import logging
+from dotenv import load_dotenv
+from config.config import MQTT_SUBSCRIBER_CONFIG
 
-def main():
-    # Create a Subscriber instance with the broker address and topic
-    subscriber = Subscriber(broker_address="test.mosquitto.org", port=1883, topic="test/topic")
-
-    # Connect to the MQTT broker
-    subscriber.connect()
-
-    # Subscribe to the specified topic
-    subscriber.subscribe()
-
-    # Keep the script running to listen for messages
-    subscriber.run()
+# Load environment variables from .env file
+load_dotenv('.env')
+# Configure Environment Variables
+BROKER_ADDRESS = MQTT_SUBSCRIBER_CONFIG["broker_address"]
+PORT = MQTT_SUBSCRIBER_CONFIG["port"]
+TOPIC = MQTT_SUBSCRIBER_CONFIG["topic"]
 
 # Entry point
 if __name__ == "__main__":
-    main()
-else:
-    logging.warning("This script is intended to be run as a standalone application. Importing it may not work as expected.")
+    subscriber = Subscriber(broker_address=BROKER_ADDRESS, port=PORT, topic=TOPIC)
+    subscriber.run() # Connect and start the subscriber
     
