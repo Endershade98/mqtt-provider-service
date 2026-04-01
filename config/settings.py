@@ -42,6 +42,10 @@ INSTALLED_APPS = [
     'apps.iot',
     'apps.mqtt',
     'apps.realtime',
+
+    # Third-party apps
+    'channels',
+    'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -126,3 +130,15 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# MQTT environment variables
+MQTT_BROKER = os.getenv('MQTT_BROKER', 'localhost')
+MQTT_PORT = int(os.getenv('MQTT_PORT', 1883))
+MQTT_CLIENT_ID = os.getenv('MQTT_CLIENT_ID', 'mqtt_client')
+
+# Database environment variables
+DATABASE_PORT = int(os.getenv('DATABASE_PORT', 5432))
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'mqtt_db')
+DATABASE_HOST = os.getenv('DATABASE_HOST', 'localhost')
+DATABASE_USER = os.getenv('DATABASE_USER', 'mqtt_user')
+DATABASE_PASSWORD = os.getenv('DATABASE_PASSWORD', 'mqtt_password')

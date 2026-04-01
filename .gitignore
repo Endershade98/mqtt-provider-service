@@ -76,3 +76,5 @@ janusdb_remote.sql
 /.coverage
 
 *.rdb
+
+.env
