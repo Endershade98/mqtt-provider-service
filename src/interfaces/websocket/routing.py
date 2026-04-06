@@ -1,0 +1,1 @@
+# Routing ASGI application for WebSocket connections
