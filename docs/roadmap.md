@@ -1,368 +1,459 @@
-# Backend Development Roadmap (DDD + Clean Architecture)
+# Backend Development Roadmap (DDD + Clean Architecture) — Revised Senior Version
 
 ## General Strategy
 
-Each Epic follows a strict development cycle:
+Each Epic follows a strict engineering cycle:
 
 ```
-Design → Domain → Use Case → Adapter → Test → Refactor
+Design → Domain Model → Domain Events → Use Cases → Adapters → Tests → Refactor
 ```
 
-Each Epic must produce:
+Key principle:
 
-* working code
-* unit tests (domain + application)
-* integration tests (infrastructure)
-* verified end-to-end flow
+> The Domain is completely independent from frameworks, infrastructure, and delivery mechanisms.
 
 ---
 
-## Bounded Contexts
+# Core Architectural Principles
 
-The system is divided into the following bounded contexts:
+## Separation of Concerns Model
 
-* Device Management
-* Telemetry Ingestion
-* Command Execution
-* Connectivity (MQTT lifecycle)
-* Realtime Events
+The system is structured into 4 strict layers:
 
----
+### 1. DOMAIN LAYER (Pure Business Logic)
 
-## EPIC 1: Domain Foundations
+* Entities
+* Value Objects
+* Aggregates
+* Domain Services
+* Domain Events
+* Repository Interfaces
 
-### Objective
+### 2. APPLICATION LAYER (Use Case Orchestration)
 
-Establish a clean and framework-independent domain layer.
+* Use Cases
+* Input/Output DTOs
+* Transaction boundaries
+* Event emission orchestration
 
-### Tasks
+### 3. INFRASTRUCTURE LAYER (Technical Implementation)
 
-* Define ubiquitous language
-* Define bounded contexts
-* Create domain entities:
+* Django ORM
+* MQTT Client
+* Redis
+* Celery
+* External APIs
+* Repository implementations
 
-  * Device
-  * Command
-  * Telemetry
-* Define value objects:
+### 4. INTERFACE LAYER (Delivery Mechanisms)
 
-  * DeviceId
-  * Topic
-* Define repository interfaces:
-
-  * DeviceRepository
-  * CommandRepository
-* Define domain behaviors:
-
-  * Device.mark_online()
-  * Device.mark_offline()
-  * Command lifecycle transitions
-* Define domain exceptions
-
-### Tests
-
-* Unit tests for all entities
-* Unit tests for value objects
-* Domain behavior validation
+* REST API (Django Views)
+* MQTT Handlers
+* WebSocket Consumers (Channels)
 
 ---
 
-## EPIC 2: Application Layer (Use Cases)
+# SYSTEM EVENT MODEL (IMPORTANT FOUNDATION)
 
-### Objective
+Before EPIC 1, the system defines:
 
-Implement application services that orchestrate domain logic.
+## Domain Events (Business Meaning)
 
-### Tasks
+* DeviceBecameOnline
+* DeviceBecameOffline
+* DeviceMarkedStale
+* TelemetryReceived
+* CommandCreated
+* CommandSent
+* CommandAcknowledged
 
-* Create use cases:
+## Integration Events (External Propagation)
 
-  * HandleTelemetryUseCase
-  * SendCommandUseCase
-  * UpdateDeviceStateUseCase
-* Define input/output contracts
-* Ensure no dependency on infrastructure
-* Handle domain orchestration only
+* telemetry.received
+* device.status.changed
+* command.status.updated
 
-### Tests
+## Trace Events (Observability Only — NOT DOMAIN)
 
-* Unit tests for each use case
+* mqtt.message.received
+* celery.task.started
+* websocket.event.sent
+
+---
+
+# EPIC 0 — System State Model Refactor (NEW CRITICAL EPIC)
+
+## Objective
+
+Separate domain truth, events, and observability concerns.
+
+## Tasks
+
+* Define Domain Event model
+* Define Integration Event model
+* Define Trace Event model
+* Remove state-machine thinking from infrastructure layers
+* Introduce Outbox pattern foundation
+
+## Output
+
+* Event taxonomy defined
+* Clear separation between:
+
+  * State (domain)
+  * Event (facts)
+  * Trace (observability)
+
+---
+
+# EPIC 1 — Domain Foundations
+
+## Objective
+
+Build a pure domain model independent of frameworks.
+
+## Tasks
+
+### Entities
+
+* Device
+* Command
+* Telemetry
+
+### Value Objects
+
+* DeviceId
+* Topic
+* Payload
+
+### Aggregates
+
+* DeviceAggregate
+* CommandAggregate
+
+### Repository Interfaces
+
+* DeviceRepository
+* CommandRepository
+
+### Domain Behaviors
+
+* Device.mark_online()
+* Device.mark_offline()
+* Device.mark_stale()
+* Command.send()
+* Command.ack()
+* Command.fail()
+
+### Domain Rules
+
+* State transition validation
+* Idempotency rules
+* Consistency invariants
+
+## Tests
+
+* Unit tests for entities
+* Value object validation
+* Aggregate state transitions
+
+---
+
+# EPIC 2 — Application Layer (Use Cases)
+
+## Objective
+
+Orchestrate domain logic without infrastructure coupling.
+
+## Use Cases
+
+* HandleTelemetryUseCase
+* UpdateDeviceStateUseCase
+* SendCommandUseCase
+* AcknowledgeCommandUseCase
+
+## Responsibilities
+
+* Load aggregates
+* Apply domain logic
+* Persist state via repositories
+* Emit domain events
+* Register outbox events
+
+## Tests
+
 * Mock repositories
 * Validate state transitions
+* Validate emitted events
 
 ---
 
-## EPIC 3: Persistence Adapters (Django ORM)
+# EPIC 3 — Persistence Layer (Django ORM)
 
-### Objective
+## Objective
 
-Connect domain to database without leaking framework logic.
+Implement storage without leaking ORM into domain.
 
-### Tasks
+## Tasks
 
-* Implement Django models (infrastructure layer)
-* Implement repository adapters:
+* Django models (infrastructure only)
+* Repository implementations
+* Domain ↔ ORM mapping layer
+* Outbox table implementation
 
-  * DjangoDeviceRepository
-  * DjangoCommandRepository
-* Map domain ↔ ORM models
-* Ensure transactional consistency
+## Outbox Pattern (Critical)
 
-### Tests
+* Store domain events inside DB transaction
+* Separate dispatcher (Celery)
 
-* Integration tests with database
-* Repository behavior validation
-* Data mapping correctness
+## Tests
 
----
-
-## EPIC 4: MQTT Adapter (Infrastructure)
-
-### Objective
-
-Integrate MQTT as an external adapter.
-
-### Tasks
-
-* Implement MQTTClient:
-
-  * connection lifecycle
-  * automatic reconnection
-  * LWT support
-* Implement MQTTHandler (interfaces layer)
-* Route messages to use cases
-* Ensure no business logic in MQTT layer
-
-### Tests
-
-* Unit test message handling (mock handler)
-* Integration test with MQTT broker (Docker)
-* Validate message → use case flow
+* Integration tests DB + repositories
+* Mapping validation
 
 ---
 
-## EPIC 5: Telemetry Ingestion
+# EPIC 4 — MQTT Adapter
 
-### Objective
+## Objective
 
-Process incoming telemetry and update system state.
+Handle MQTT as external transport only.
 
-### Tasks
+## Tasks
 
-* Implement HandleTelemetryUseCase
-* Parse topic using value objects
-* Validate payload
+* MQTT client (connection, reconnect, LWT)
+* Topic parser (Value Object)
+* Message translator (Anti-Corruption Layer)
+* Route to application use cases
+
+## Rules
+
+* NO business logic in MQTT layer
+* NO direct DB access
+
+## Tests
+
+* MQTT message parsing
+* Integration broker tests (Docker)
+
+---
+
+# EPIC 5 — Telemetry Ingestion
+
+## Objective
+
+Process telemetry into domain model.
+
+## Flow
+
+```
+MQTT → Parser → Use Case → Domain → DB → Event
+```
+
+## Tasks
+
+* Parse telemetry payload
+* Validate device existence
+* Update device last_seen
 * Persist telemetry
-* Update device state:
+* Emit TelemetryReceived event
 
-  * last_seen
-  * is_online
-* Emit domain events
+## Tests
 
-### Tests
-
-* Unit test parsing logic
-* Unit test use case
-* Integration test MQTT → DB
-* End-to-end test with simulated device
+* End-to-end MQTT → DB
+* Invalid payload handling
 
 ---
 
-## EPIC 6: Command Management
+# EPIC 6 — Command Management
 
-### Objective
+## Objective
 
-Manage command lifecycle and delivery.
+Manage full command lifecycle as a state machine.
 
-### Tasks
+## States
 
-* Implement Command entity lifecycle:
+* PENDING
+* SENT
+* ACKED
+* FAILED
+* RETRYING
+* EXPIRED
 
-  * pending → sent → ack → failed
-* Implement SendCommandUseCase
-* Integrate MQTT publisher
-* Persist commands
-* Track command status
+## Tasks
 
-### Tests
+* SendCommandUseCase
+* Command aggregate state machine
+* MQTT publisher adapter
+* Acknowledgement handler
 
-* Unit test command lifecycle
-* Unit test use case
-* Integration test publish → DB update
+## Tests
 
----
-
-## EPIC 7: Retry and Resilience
-
-### Objective
-
-Ensure reliable command delivery in unreliable environments.
-
-### Tasks
-
-* Implement RetryCommandUseCase
-* Implement retry policy:
-
-  * max_retries
-  * exponential backoff (optional)
-* Integrate Celery or cron scheduler
-* Handle failure states
-
-### Tests
-
-* Unit test retry logic
-* Integration test retry flow
-* Simulate offline device scenarios
+* State transition validation
+* Delivery flow test
 
 ---
 
-## EPIC 8: Event-Driven Architecture (Redis + Channels)
+# EPIC 7 — Retry & Resilience
 
-### Objective
+## Objective
 
-Enable real-time event propagation.
+Ensure reliability in unstable IoT networks.
 
-### Tasks
+## Tasks
 
-* Introduce event publisher abstraction
-* Publish events:
+* RetryCommandUseCase
+* Exponential backoff strategy
+* Celery-based scheduling
+* Dead letter handling
 
-  * telemetry_received
-  * device_updated
-  * command_status_changed
-* Integrate Redis (pub/sub or channel layer)
-* Implement Django Channels consumers
+## Rules
 
-### Tests
+* Retry logic belongs to application layer
+* Infrastructure only executes tasks
 
-* Integration test Redis pub/sub
-* WebSocket event delivery test
-* End-to-end realtime flow
+## Tests
 
----
-
-## EPIC 9: API Layer (External Interface)
-
-### Objective
-
-Expose clean REST APIs for external systems.
-
-### Tasks
-
-* Implement API endpoints:
-
-  * /devices
-  * /commands
-* Use serializers for validation
-* Map API → use cases
-* Handle errors and responses
-
-### Tests
-
-* API unit tests
-* Integration tests
-* End-to-end API flow
+* Retry simulation
+* Failure scenarios
 
 ---
 
-## EPIC 10: Authentication and Security
+# EPIC 8 — Event-Driven Architecture
 
-### Objective
+## Objective
 
-Secure device and system access.
+Enable asynchronous system communication.
 
-### Tasks
+## Tasks
 
-* Implement AuthService
-* Support authentication methods:
+* Event publisher abstraction
+* Redis event bus
+* Celery outbox dispatcher
+* Django Channels integration
 
-  * username/password
-  * certificate-based
-* Integrate authentication with MQTT broker
-* Validate access control
+## Flow
 
-### Tests
+```
+Domain Event → Outbox → Celery → Redis → Consumers
+```
 
-* Unit test authentication logic
-* Integration test device access
-* Security validation tests
+## Tests
 
----
-
-## EPIC 11: Observability
-
-### Objective
-
-Provide visibility into system behavior.
-
-### Tasks
-
-* Implement structured logging
-* Introduce metrics:
-
-  * MQTT messages
-  * errors
-  * command success rate
-* Add health check endpoints
-* Add tracing hooks (optional)
-
-### Tests
-
-* Logging validation
-* Metrics exposure tests
+* Event propagation
+* WebSocket delivery
 
 ---
 
-## EPIC 12: Performance and Scalability
+# EPIC 9 — API Layer
 
-### Objective
+## Objective
 
-Prepare system for high-load scenarios.
+Expose clean REST interface.
 
-### Tasks
+## Tasks
 
-* Implement MQTT shared subscriptions
-* Scale workers horizontally
-* Optimize database queries
-* Introduce Redis caching
-* Tune connection pools
+* Device APIs
+* Command APIs
+* DTO validation
+* Use case mapping
 
-### Tests
+## Rules
 
-* Load testing
-* Stress testing
-* Performance benchmarks
+* No domain logic in views
+* Only orchestration
+
+## Tests
+
+* API integration tests
 
 ---
 
-## EPIC 13: Testing Strategy and Quality Enforcement
+# EPIC 10 — Authentication & Security
 
-### Objective
+## Objective
 
-Ensure system reliability through comprehensive testing.
+Secure system access for devices and users.
 
-### Tasks
+## Tasks
 
-* Structure test suite:
+* Auth service
+* Device authentication (token/cert)
+* MQTT auth integration
+* Access control rules
+
+---
+
+# EPIC 11 — Observability
+
+## Objective
+
+System visibility in production.
+
+## Tasks
+
+* Structured logging
+* Metrics (MQTT, commands, failures)
+* Health checks
+* Distributed tracing hooks
+
+## Important
+
+* Observability ≠ Domain logic
+
+---
+
+# EPIC 12 — Performance & Scalability
+
+## Objective
+
+Support high-volume IoT workloads.
+
+## Tasks
+
+* MQTT scaling (shared subscriptions)
+* Horizontal worker scaling
+* Redis caching layer
+* DB query optimization
+* Connection pooling tuning
+
+---
+
+# EPIC 13 — Testing Strategy
+
+## Objective
+
+Ensure production-grade reliability.
+
+## Structure
 
 ```
 tests/
-├── unit/
-├── integration/
-├── e2e/
+  unit/
+  integration/
+  e2e/
 ```
 
-* Implement mocks for:
+## Coverage Targets
 
-  * MQTT
-  * Redis
-  * repositories
-* Enforce test coverage
+* Domain: 95%
+* Application: 85%
+* Integration: critical flows only
 
-### Tests
+## End-to-End Scenarios
 
-* Coverage target: >80%
-* Full end-to-end scenarios:
+* Device → MQTT → Use Case → DB → Event → WebSocket
 
-  * device → MQTT → backend → frontend
-* Continuous integration setup (optional)
+---
+
+# FINAL ARCHITECTURAL GUARANTEE
+
+If implemented correctly:
+
+* Domain is framework-free
+* Events drive system evolution
+* MQTT is just transport
+* DB is persistence only
+* Redis is event propagation only
+* Celery is execution engine only
+

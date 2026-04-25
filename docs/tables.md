@@ -1,144 +1,185 @@
-# System State Tables
+# System State Model (Revised)
 
-This document defines the operational states across all core components of the system.
-Each state represents a well-defined phase in the lifecycle of data processing, communication, and system execution.
+This document defines the operational state model of the system after applying Domain-Driven Design and Clean Architecture principles.
 
----
+It replaces the previous unified "System State Tables" approach with a clear separation between:
 
-## MQTT Worker States
-
-| State Code | Name             | Description                                     |
-| ---------- | ---------------- | ----------------------------------------------- |
-| DIS        | Disconnected     | MQTT client is not connected to the broker      |
-| CON        | Connecting       | Attempting to establish connection to broker    |
-| CND        | Connected        | Successfully connected and subscribed to topics |
-| SUB        | Subscribed       | Topics subscription completed                   |
-| MSG_RCV    | MessageReceived  | Raw MQTT message received                       |
-| MSG_VAL    | MessageValidated | Payload successfully parsed and validated       |
-| MSG_ERR    | MessageError     | Payload parsing or validation failed            |
-| ROUTE      | Routing          | Message forwarded to handler layer              |
-| DOM_CALL   | DomainInvocation | Application use case execution triggered        |
-| IDLE       | Idle             | Waiting for next message                        |
+* Domain States (business truth)
+* Execution Traces (observability only)
+* Infrastructure Lifecycle States (technical health)
 
 ---
 
-## MQTT Message Processing States (Application Flow)
+# Core Principle
 
-| State Code | Name             | Description                          |
-| ---------- | ---------------- | ------------------------------------ |
-| IN         | Incoming         | Message received from MQTT layer     |
-| PARSED     | Parsed           | Topic and payload extracted          |
-| VALID      | Validated        | Message structure is valid           |
-| REJECTED   | Rejected         | Message invalid or device unknown    |
-| EXEC       | ExecutingUseCase | Application use case running         |
-| DB_WRITE   | Persisting       | Data being stored via repository     |
-| EVENT_PUB  | EventPublished   | Event propagated to Redis / Channels |
-| DONE       | Completed        | Processing completed successfully    |
+The system does not treat all states equally.
 
----
+There are three distinct categories:
 
-## Device State (Domain)
+## 1. Domain States (Source of Truth)
 
-| State Code | Name    | Description                                        |
-| ---------- | ------- | -------------------------------------------------- |
-| OFF        | Offline | Device is not connected or LWT triggered           |
-| ON         | Online  | Device is actively sending data                    |
-| STALE      | Stale   | Device has not sent data within expected timeframe |
-| UNKNOWN    | Unknown | Device exists but has no telemetry yet             |
+Business-relevant states persisted in the domain model.
+
+## 2. Execution Traces (Non-persistent)
+
+Operational steps used for observability, debugging, and metrics.
+
+## 3. Infrastructure Lifecycle States (System Health)
+
+Technical connectivity and runtime conditions of infrastructure components.
 
 ---
 
-## Command Lifecycle States
+# MQTT Worker Lifecycle (Infrastructure Trace)
 
-| State Code | Name         | Description                         |
-| ---------- | ------------ | ----------------------------------- |
-| PND        | Pending      | Command created but not sent        |
-| SENT       | Sent         | Command published to MQTT broker    |
-| ACK        | Acknowledged | Device confirmed execution          |
-| FAIL       | Failed       | Command failed to send or execute   |
-| RETRY      | Retrying     | Command is being retried            |
-| EXPIRED    | Expired      | Retry limit reached without success |
+These states describe the runtime behavior of the MQTT worker.
+They are NOT part of the domain model.
 
----
-
-## WebSocket / Channels States
-
-| State Code | Name            | Description                          |
-| ---------- | --------------- | ------------------------------------ |
-| IDL        | Idle            | ASGI server ready, no active socket  |
-| CONN       | Connecting      | WebSocket handshake in progress      |
-| OPEN       | Connected       | WebSocket connection established     |
-| AUTH       | Authorized      | Client authenticated (if applicable) |
-| SUB        | Subscribed      | Client subscribed to channel/group   |
-| RECV       | ReceivingEvent  | Event received from Redis            |
-| PROC       | ProcessingEvent | Event transformed for frontend       |
-| SEND       | Sending         | Data sent to client                  |
-| DISC       | Disconnected    | Connection closed                    |
+| State Code | Name         | Description                                |
+| ---------- | ------------ | ------------------------------------------ |
+| DIS        | Disconnected | MQTT client is not connected to the broker |
+| CON        | Connecting   | Attempting to establish connection         |
+| CND        | Connected    | Successfully connected to broker           |
+| SUB        | Subscribed   | Topic subscriptions completed              |
+| IDLE       | Idle         | Waiting for incoming messages              |
 
 ---
 
-## Celery Task States
+# MQTT Message Processing Flow (Execution Trace)
 
-| State Code | Name       | Description                   |
-| ---------- | ---------- | ----------------------------- |
-| IDL        | Idle       | No task currently running     |
-| SCH        | Scheduled  | Task scheduled by Celery Beat |
-| QUE        | Queued     | Task waiting in broker queue  |
-| RUN        | Running    | Task currently executing      |
-| OK         | Success    | Task completed successfully   |
-| FAIL       | Failed     | Task execution failed         |
-| RET        | Retrying   | Task retry in progress        |
-| MAX_RET    | MaxRetries | Retry limit reached           |
+Represents internal processing steps of incoming MQTT messages.
+This is NOT a state machine and must not influence domain logic.
 
----
-
-## Cronjob Execution States
-
-| State Code | Name            | Description                     |
-| ---------- | --------------- | ------------------------------- |
-| WAIT       | Waiting         | Waiting for scheduled execution |
-| TRIG       | Triggered       | Cron triggered execution        |
-| RUN        | Running         | Task is executing               |
-| CALL       | InvokingUseCase | Application use case invoked    |
-| OK         | Success         | Task completed successfully     |
-| FAIL       | Failure         | Task execution failed           |
-| LOG        | Logging         | Execution result logged         |
+| State Code | Name             | Description                            |
+| ---------- | ---------------- | -------------------------------------- |
+| MSG_RCV    | MessageReceived  | Raw MQTT message received              |
+| PARSED     | Parsed           | Topic and payload extracted            |
+| VALID      | Validated        | Payload structure validated            |
+| REJECTED   | Rejected         | Invalid message or unknown device      |
+| ROUTE      | Routed           | Message forwarded to application layer |
+| EXEC       | ExecutingUseCase | Use case execution triggered           |
+| DONE       | Completed        | Processing completed successfully      |
 
 ---
 
-## Frontend (React) States
+# Device State (Domain Model)
+
+Core business state of an IoT device.
+
+| State Code | Name    | Description                                    |
+| ---------- | ------- | ---------------------------------------------- |
+| OFF        | Offline | Device not connected or LWT triggered          |
+| ON         | Online  | Device actively communicating                  |
+| STALE      | Stale   | No telemetry received within expected interval |
+| UNKNOWN    | Unknown | Device registered but no telemetry yet         |
+
+---
+
+# Command Lifecycle State (Domain Model)
+
+Represents the business lifecycle of a command aggregate.
+
+| State Code | Name         | Description                        |
+| ---------- | ------------ | ---------------------------------- |
+| PND        | Pending      | Command created but not dispatched |
+| SENT       | Sent         | Command published to MQTT broker   |
+| ACK        | Acknowledged | Device confirmed execution         |
+| FAIL       | Failed       | Execution or delivery failure      |
+| RETRY      | Retrying     | Retry attempt in progress          |
+| EXPIRED    | Expired      | Retry limit exceeded               |
+
+---
+
+# WebSocket Connection Lifecycle (Infrastructure Trace)
+
+Represents lifecycle of real-time connections.
+
+| State Code | Name           | Description                     |
+| ---------- | -------------- | ------------------------------- |
+| IDL        | Idle           | No active connection            |
+| CONN       | Connecting     | WebSocket handshake in progress |
+| OPEN       | Connected      | Connection established          |
+| AUTH       | Authorized     | Client authenticated            |
+| SUB        | Subscribed     | Subscribed to channels          |
+| RECV       | ReceivingEvent | Event received from Redis       |
+| SEND       | Sending        | Sending data to client          |
+| DISC       | Disconnected   | Connection closed               |
+
+---
+
+# Celery Task Execution Trace
+
+Represents asynchronous task execution lifecycle.
+
+| State Code | Name       | Description                 |
+| ---------- | ---------- | --------------------------- |
+| IDL        | Idle       | No task executing           |
+| SCH        | Scheduled  | Task scheduled              |
+| QUE        | Queued     | Waiting in broker queue     |
+| RUN        | Running    | Task executing              |
+| OK         | Success    | Task completed successfully |
+| FAIL       | Failed     | Task execution failed       |
+| RET        | Retrying   | Retry in progress           |
+| MAX_RET    | MaxRetries | Retry limit reached         |
+
+---
+
+# Cronjob Execution Trace
+
+Represents scheduled job execution flow.
+
+| State Code | Name            | Description               |
+| ---------- | --------------- | ------------------------- |
+| WAIT       | Waiting         | Waiting for trigger       |
+| TRIG       | Triggered       | Execution started         |
+| RUN        | Running         | Task executing            |
+| CALL       | InvokingUseCase | Application logic invoked |
+| OK         | Success         | Execution completed       |
+| FAIL       | Failure         | Execution failed          |
+| LOG        | Logging         | Result persisted          |
+
+---
+
+# Frontend UI State Model (React)
+
+Represents client-side UI and connection state.
 
 | State Code | Name          | Description                       |
 | ---------- | ------------- | --------------------------------- |
-| INIT       | Initializing  | Application bootstrapping         |
+| INIT       | Initializing  | Application booting               |
 | IDL        | Idle          | No active connection              |
 | CON        | ConnectingWS  | Establishing WebSocket connection |
 | CND        | Connected     | WebSocket connected               |
-| SUB        | Subscribed    | Subscribed to backend channels    |
-| RCV        | ReceivingData | Receiving real-time updates       |
-| SYNC       | Syncing       | Updating application state        |
-| UI_UPD     | UpdatingUI    | Rendering UI updates              |
-| ERR        | Error         | Connection or processing error    |
+| SUB        | Subscribed    | Subscribed to backend streams     |
+| RCV        | ReceivingData | Receiving updates                 |
+| SYNC       | Syncing       | Synchronizing state               |
+| UI_UPD     | UpdatingUI    | UI re-rendering                   |
+| ERR        | Error         | Error state                       |
 | DISC       | Disconnected  | Connection lost                   |
 
 ---
 
-## System-Wide Error States
+# System-Wide Error Taxonomy (Not a State Machine)
 
-| State Code | Name            | Description                          |
-| ---------- | --------------- | ------------------------------------ |
-| NET_ERR    | NetworkError    | Connectivity issue (MQTT, Redis, DB) |
-| AUTH_ERR   | AuthError       | Authentication failure               |
-| VAL_ERR    | ValidationError | Invalid payload or data              |
-| PROC_ERR   | ProcessingError | Failure during use case execution    |
-| DB_ERR     | DatabaseError   | Persistence failure                  |
-| TIMEOUT    | Timeout         | Operation exceeded allowed time      |
+These represent categorized failure conditions across the system.
+They are NOT lifecycle states.
+
+| Code     | Name            | Description                             |
+| -------- | --------------- | --------------------------------------- |
+| NET_ERR  | NetworkError    | Network or broker connectivity issue    |
+| AUTH_ERR | AuthError       | Authentication or authorization failure |
+| VAL_ERR  | ValidationError | Payload or input validation failure     |
+| PROC_ERR | ProcessingError | Use case or domain processing failure   |
+| DB_ERR   | DatabaseError   | Persistence layer failure               |
+| TIMEOUT  | Timeout         | Operation exceeded allowed time         |
 
 ---
 
-## Notes
+# Notes
 
-* All state transitions must be deterministic and testable.
-* Each state should be observable through logs or monitoring tools.
-* State codes are designed to be used in logs, metrics, and debugging.
-* Application logic must operate on domain states, not infrastructure states.
+* Domain states represent business truth and are persisted.
+* Execution traces are ephemeral and used only for observability.
+* Infrastructure lifecycle states describe system health only.
+* No execution trace may directly modify domain state.
+* All domain state transitions must be deterministic and testable.
+* Observability data must not leak into domain logic.
