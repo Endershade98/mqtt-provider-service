@@ -56,7 +56,7 @@ def test_device_emits_offline_event():
     device.mark_online(datetime(2024, 1, 1, 12, 0, 0))
     device.pull_events()  # reset
 
-    device.mark_offline()
+    device.mark_offline(now=datetime(2024, 1, 1, 12, 10, 0))
 
     events = device.pull_events()
 

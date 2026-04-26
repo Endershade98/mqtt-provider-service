@@ -67,7 +67,7 @@ def test_device_goes_offline():
     now = datetime(2024, 1, 1, 12, 0, 0)
 
     device.mark_online(now)
-    device.mark_offline()
+    device.mark_offline(now)
 
     assert device.is_online is False
 
