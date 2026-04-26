@@ -9,7 +9,6 @@ from src.domain.device.events import (
     DeviceBecameOffline,
     DeviceMarkedStale,
 )
-from src.domain.telemetry.entity import Telemetry
 
 
 @dataclass
@@ -31,24 +30,23 @@ class Device:
     # ==========================================
 
     def mark_online(self, now: datetime):
+
         self.last_seen = now
 
-        # già online → niente evento
         if self.is_online:
             return
 
-        # transizione OFFLINE → ONLINE
         self.is_online = True
 
         self._events.append(
             DeviceBecameOnline(
                 device_id=self.id.value,
-                event_id=f"{self.id.value}-online-{now.timestamp()}",
                 occurred_at=now
             )
         )
 
-    def mark_offline(self):
+    def mark_offline(self, now: datetime):
+
         if not self.is_online:
             return
 
@@ -56,18 +54,17 @@ class Device:
 
         self._events.append(
             DeviceBecameOffline(
-                device_id=self.id.value, 
-                event_id=f"{self.id.value}-offline-{datetime.now().timestamp()}", 
-                occurred_at=datetime.now()
+                device_id=self.id.value,
+                occurred_at=now
             )
         )
 
     def check_stale(self, now: datetime, threshold_seconds: int):
-        """
-        Determina se il device è diventato stale.
-        NON forza lo stato, ma lo deriva.
-        """
+
         if not self.last_seen:
+            return
+
+        if not self.is_online:
             return
 
         delta = (now - self.last_seen).total_seconds()
@@ -75,16 +72,11 @@ class Device:
         if delta <= threshold_seconds:
             return
 
-        # evita duplicati
-        if not self.is_online:
-            return
-
         self.is_online = False
 
         self._events.append(
             DeviceMarkedStale(
-                device_id=self.id.value, 
-                event_id=f"{self.id.value}-stale-{now.timestamp()}", 
+                device_id=self.id.value,
                 occurred_at=now
             )
         )
