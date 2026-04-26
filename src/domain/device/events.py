@@ -1,16 +1,24 @@
 # src/domain/device/events.py
 from dataclasses import dataclass
-from src.domain.shared.events import DomainEvent
+import datetime
+
+
+
+@dataclass(frozen=True)
+class DeviceBecameOnline:
+    device_id: str
+    event_id: str
+    occurred_at: datetime
 
 
 @dataclass(frozen=True)
-class DeviceBecameOnline(DomainEvent):
+class DeviceBecameOffline:
     device_id: str
+    event_id: str
+    occurred_at: datetime
 
 @dataclass(frozen=True)
-class DeviceBecameOffline(DomainEvent):
+class DeviceMarkedStale:
     device_id: str
-
-@dataclass(frozen=True)
-class DeviceMarkedStale(DomainEvent):
-    device_id: str
+    event_id: str
+    occurred_at: datetime

@@ -1,7 +1,6 @@
 # src/domain/command/entity.py
 from dataclasses import dataclass, field
 from typing import List
-from src.domain.shared.events import DomainEvent
 
 from src.domain.command.events import (
     CommandCreated,
@@ -87,7 +86,7 @@ class Command:
 
         return cmd
     
-    def pull_events(self) -> List[DomainEvent]:
+    def pull_events(self) -> List:
         events = self._events[:]
         self._events.clear()
         return events

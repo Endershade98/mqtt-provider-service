@@ -9,7 +9,7 @@ from src.domain.device.events import (
     DeviceBecameOffline,
     DeviceMarkedStale,
 )
-from src.domain.shared.events import DomainEvent
+from src.domain.telemetry.entity import Telemetry
 
 
 @dataclass
@@ -24,22 +24,29 @@ class Device:
     last_seen: Optional[datetime] = None
 
     firmware_version: Optional[str] = None
-    _events: List[DomainEvent] = field(default_factory=list, init=False)
+    _events: List = field(default_factory=list, init=False)
 
     # ==========================================
     # DOMAIN BEHAVIOR
     # ==========================================
 
     def mark_online(self, now: datetime):
-        # sempre aggiorniamo last_seen (importantissimo)
         self.last_seen = now
 
-        if not self.is_online:
-            self.is_online = True
+        # già online → niente evento
+        if self.is_online:
+            return
 
-            self._events.append(
-                DeviceBecameOnline(device_id=self.id.value)
+        # transizione OFFLINE → ONLINE
+        self.is_online = True
+
+        self._events.append(
+            DeviceBecameOnline(
+                device_id=self.id.value,
+                event_id=f"{self.id.value}-online-{now.timestamp()}",
+                occurred_at=now
             )
+        )
 
     def mark_offline(self):
         if not self.is_online:
@@ -48,7 +55,11 @@ class Device:
         self.is_online = False
 
         self._events.append(
-            DeviceBecameOffline(device_id=self.id.value)
+            DeviceBecameOffline(
+                device_id=self.id.value, 
+                event_id=f"{self.id.value}-offline-{datetime.now().timestamp()}", 
+                occurred_at=datetime.now()
+            )
         )
 
     def check_stale(self, now: datetime, threshold_seconds: int):
@@ -71,13 +82,17 @@ class Device:
         self.is_online = False
 
         self._events.append(
-            DeviceMarkedStale(device_id=self.id.value)
+            DeviceMarkedStale(
+                device_id=self.id.value, 
+                event_id=f"{self.id.value}-stale-{now.timestamp()}", 
+                occurred_at=now
+            )
         )
 
     def update_firmware(self, version: str):
         self.firmware_version = version
 
-    def pull_events(self) -> List[DomainEvent]:
+    def pull_events(self) -> List:
         events = self._events[:]
         self._events.clear()
         return events
