@@ -39,9 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # My apps 
-    'apps.iot',
-    'apps.mqtt',
-    'apps.realtime',
+    'src.infrastructure.persistence.django',  # oppure app config corretta
 
     # Third-party apps
     'channels',
