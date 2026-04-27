@@ -3,7 +3,10 @@ from datetime import datetime
 
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
+from django.utils import timezone
+from datetime import datetime
 
+date=timezone.make_aware(datetime(2024, 1, 1, 12, 0, 0))
 
 def test_device_emits_online_event():
     device = Device(
@@ -13,7 +16,7 @@ def test_device_emits_online_event():
         organization="org"
     )
 
-    now = datetime(2024, 1, 1, 12, 0, 0)
+    now = date
 
     device.mark_online(now)
 
@@ -35,7 +38,7 @@ def test_mark_online_emits_event_only_once():
         organization="org"
     )
 
-    now = datetime(2024, 1, 1, 12, 0, 0)
+    now = date
 
     device.mark_online(now)
     device.mark_online(now)
@@ -53,10 +56,10 @@ def test_device_emits_offline_event():
         organization="org"
     )
 
-    device.mark_online(datetime(2024, 1, 1, 12, 0, 0))
+    device.mark_online(date)
     device.pull_events()  # reset
 
-    device.mark_offline(now=datetime(2024, 1, 1, 12, 10, 0))
+    device.mark_offline(now=timezone.make_aware(datetime(2024, 1, 1, 12, 10, 0)))
 
     events = device.pull_events()
 
@@ -72,11 +75,11 @@ def test_device_emits_stale_event():
         organization="org"
     )
 
-    device.mark_online(datetime(2024, 1, 1, 12, 0, 0))
+    device.mark_online(date)
     device.pull_events()  # reset
 
     device.check_stale(
-        now=datetime(2024, 1, 1, 12, 10, 0),
+        now=timezone.make_aware(datetime(2024, 1, 1, 12, 10, 0)),
         threshold_seconds=300
     )
 

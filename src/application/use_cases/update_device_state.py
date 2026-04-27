@@ -1,5 +1,5 @@
 # src/application/use_cases/update_device_state.py
-import datetime
+from datetime import datetime
 from src.domain.device.value_objects import DeviceId
 
 

@@ -1,10 +1,8 @@
 # src/application/ports/outbox.py
 from abc import ABC, abstractmethod
-from typing import List
 
-
-class Outbox(ABC):
+class OutboxPort(ABC):
 
     @abstractmethod
-    def add(self, events: List):
+    def save(self, events: list):
         pass
