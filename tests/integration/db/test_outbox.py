@@ -47,8 +47,8 @@ def test_outbox_multiple_events_saved():
     repo = DjangoOutboxRepository()
 
     events = [
-        DeviceBecameOnline(device_id="dev-1", occurred_at=datetime.now()),
-        DeviceBecameOffline(device_id="dev-1", occurred_at=datetime.now()),
+        DeviceBecameOnline(device_id="dev-1", occurred_at=timezone.now()),
+        DeviceBecameOffline(device_id="dev-1", occurred_at=timezone.now()),
     ]
 
     repo.save(events)
@@ -59,7 +59,7 @@ def test_outbox_idempotency_behavior():
     repo = DjangoOutboxRepository()
 
     events = [
-        DeviceBecameOnline(device_id="dev-1", occurred_at=datetime.now())
+        DeviceBecameOnline(device_id="dev-1", occurred_at=timezone.now())
     ]
 
     repo.save(events)

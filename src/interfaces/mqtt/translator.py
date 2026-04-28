@@ -8,6 +8,9 @@ class TelemetryDTO:
     device_id: DeviceId
     payload: dict
 
+    def key(self):
+        return "telemetry"
+
 
 @dataclass
 class CommandAckDTO:

@@ -1,6 +1,7 @@
 # tests/unit/domain/telemetry/test_telemetry_device_integration.py
 import pytest
-from datetime import datetime, timedelta
+from datetime import timedelta
+from django.utils import timezone
 from src.application.services.device_service import DeviceService
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
@@ -21,7 +22,7 @@ def test_telemetry_marks_device_online():
     telemetry = Telemetry(
         device_id=device.id,
         payload={"temperature": 22.5},
-        received_at=datetime.now()
+        received_at=timezone.now()
     )
 
     service.record_telemetry(device, telemetry)
@@ -37,7 +38,7 @@ def test_multiple_telemetry_no_duplicate_online_event():
         organization="org-456"
     )
 
-    now = datetime.now()
+    now = timezone.now()
 
     telemetry1 = Telemetry(
         device_id=device.id,

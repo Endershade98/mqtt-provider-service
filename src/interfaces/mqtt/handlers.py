@@ -13,18 +13,32 @@ class MQTTHandler:
         self.ack_uc = ack_uc
         self.translator = translator
 
+        self.dispatch_table = {
+            "TelemetryDTO": self._handle_telemetry,
+            "CommandAckDTO": self._handle_ack,
+        }
+    
     def handle(self, topic: str, payload: dict):
         dto = self.translator.translate(topic, payload)
 
-        if hasattr(dto, "payload") and hasattr(dto, "device_id"):
-            if dto.__class__.__name__ == "TelemetryDTO":
-                self.telemetry_uc.execute(
-                    device_id=dto.device_id,
-                    payload=dto.payload
-                )
+        dto_type = dto.__class__.__name__
 
-            elif dto.__class__.__name__ == "CommandAckDTO":
-                self.ack_uc.execute(
-                    device_id=dto.device_id,
-                    payload=dto.payload
-                )
+        handler = self.dispatch_table.get(dto_type)
+
+        if handler is None:
+            raise ValueError(f"Unsupported DTO: {dto_type}")
+
+        handler(dto)
+
+    def _handle_telemetry(self, dto):
+        self.telemetry_uc.execute(
+            device_id=dto.device_id,
+            payload=dto.payload
+        )
+
+
+    def _handle_ack(self, dto):
+        self.ack_uc.execute(
+            device_id=dto.device_id,
+            payload=dto.payload
+        )
