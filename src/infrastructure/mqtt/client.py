@@ -1,21 +1,39 @@
 # src/infrastructure/mqtt/client.py
 import json
 import logging
-import time
+from typing import Optional
+
 import paho.mqtt.client as mqtt
+
+from src.interfaces.mqtt.message import MQTTMessage
 
 logger = logging.getLogger(__name__)
 
 
 class MQTTClient:
+    """
+    Infrastructure-level MQTT client.
+
+    Responsibilities:
+    - Manage connection lifecycle
+    - Handle reconnection
+    - Receive raw MQTT messages
+    - Convert them into MQTTMessage DTO
+    - Delegate handling to the injected handler
+
+    IMPORTANT:
+    - No business logic
+    - No domain knowledge
+    - No repository usage
+    """
 
     def __init__(
         self,
         broker: str,
         port: int,
         topic: str,
-        message_handler,   # ← dependency injection
-        client_id: str = None,
+        message_handler,
+        client_id: Optional[str] = None,
         keepalive: int = 60,
     ):
         self.broker = broker
@@ -26,72 +44,87 @@ class MQTTClient:
 
         self.client = mqtt.Client(client_id=client_id, clean_session=True)
 
-        # callbacks
-        self.client.on_connect = self.on_connect
-        self.client.on_disconnect = self.on_disconnect
-        self.client.on_message = self.on_message
+        # Bind callbacks
+        self.client.on_connect = self._on_connect
+        self.client.on_disconnect = self._on_disconnect
+        self.client.on_message = self._on_message
 
-        # LWT (Last Will)
+        # Last Will and Testament (LWT)
         self.client.will_set(
             topic="system/lwt",
             payload=json.dumps({"status": "disconnected"}),
             qos=1,
-            retain=False
+            retain=False,
         )
 
-    # ------------------------
-    # CONNECTION HANDLING
-    # ------------------------
-
-    def on_connect(self, client, userdata, flags, rc):
-        if rc == 0:
-            logger.info("MQTT connected successfully")
-            client.subscribe(self.topic)
-            logger.info(f"Subscribed to topic: {self.topic}")
-        else:
-            logger.error(f"MQTT connection failed with code {rc}")
-
-    def on_disconnect(self, client, userdata, rc):
-        logger.warning(f"MQTT disconnected with code {rc}")
-
-        # auto-reconnect loop
-        while True:
-            try:
-                logger.info("Attempting MQTT reconnection...")
-                client.reconnect()
-                logger.info("MQTT reconnected successfully")
-                break
-            except Exception as e:
-                logger.error(f"Reconnection failed: {e}")
-                time.sleep(5)
-
-    # ------------------------
-    # MESSAGE HANDLING
-    # ------------------------
-
-    def on_message(self, client, userdata, msg):
-        logger.info(f"Message received on topic: {msg.topic}")
-
-        try:
-            payload = json.loads(msg.payload.decode())
-        except Exception as e:
-            logger.error(f"Invalid JSON payload: {e}")
-            return
-
-        try:
-            # delegate to handler (NO business logic here)
-            self.message_handler.handle(msg.topic, payload)
-        except Exception as e:
-            logger.exception(f"Error in message handler: {e}")
-
-    # ------------------------
-    # START LOOP
-    # ------------------------
+    # ==========================================
+    # CONNECTION MANAGEMENT
+    # ==========================================
 
     def start(self):
         logger.info("Starting MQTT client...")
 
-        self.client.connect(self.broker, self.port, self.keepalive)
+        try:
+            self.client.connect(self.broker, self.port, self.keepalive)
+        except Exception as e:
+            logger.exception(f"MQTT connection failed: {e}")
+            raise
 
-        # NON blocca il thread principale se usi container dedicato
+        # Blocking loop (correct for dedicated container)
         self.client.loop_forever()
+
+    def _on_connect(self, client, userdata, flags, rc):
+        if rc == 0:
+            logger.info("MQTT connected successfully")
+
+            try:
+                client.subscribe(self.topic)
+                logger.info(f"Subscribed to topic: {self.topic}")
+            except Exception as e:
+                logger.exception(f"Subscription failed: {e}")
+
+        else:
+            logger.error(f"MQTT connection failed with code {rc}")
+
+    def _on_disconnect(self, client, userdata, rc):
+        logger.warning(f"MQTT disconnected with code {rc}")
+
+        # Single reconnect attempt (no infinite loop)
+        try:
+            client.reconnect()
+            logger.info("MQTT reconnected successfully")
+        except Exception as e:
+            logger.error(f"Reconnect failed: {e}")
+
+    # ==========================================
+    # MESSAGE HANDLING
+    # ==========================================
+
+    def _on_message(self, client, userdata, msg):
+        logger.debug(f"Message received on topic: {msg.topic}")
+
+        payload = self._safe_parse_payload(msg.payload)
+
+        if payload is None:
+            return
+
+        message = MQTTMessage(
+            topic=msg.topic,
+            payload=payload,
+        )
+
+        try:
+            self.message_handler.handle(message)
+        except Exception:
+            logger.exception("Error while handling MQTT message")
+
+    # ==========================================
+    # INTERNAL HELPERS
+    # ==========================================
+
+    def _safe_parse_payload(self, raw_payload: bytes) -> Optional[dict]:
+        try:
+            return json.loads(raw_payload.decode())
+        except Exception as e:
+            logger.error(f"Invalid JSON payload: {e}")
+            return None

@@ -18,11 +18,11 @@ def test_device_id_invalid():
 
 
 def test_topic_extract_device_id():
-    topic = Topic("prod/org/type/device123/telemetry")
+    topic = Topic("devices/org/device123/telemetry")
 
-    assert topic.extract_device_id() == "device123"
+    assert topic.get_device_id().value == "device123"
 
 
 def test_topic_invalid_format():
     with pytest.raises(InvalidTopicFormat):
-        Topic("invalid/topic").extract_device_id()
+        Topic("broken/topic")
