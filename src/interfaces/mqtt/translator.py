@@ -27,10 +27,10 @@ class MQTTMessageTranslator:
         device_id = topic_vo.get_device_id()
 
         if channel == TopicChannel.TELEMETRY:
-            return TelemetryDTO(device_id=device_id.value, payload=payload)
+            return TelemetryDTO(device_id=device_id, payload=payload)
 
         elif channel == TopicChannel.ACK:
-            return CommandAckDTO(device_id=device_id.value, payload=payload)
+            return CommandAckDTO(device_id=device_id, payload=payload)
 
         else:
             raise ValueError(f"Unsupported channel: {channel}")

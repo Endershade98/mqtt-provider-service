@@ -1,10 +1,10 @@
 # src/interfaces/mqtt/handlers.py
 import logging
 
-from src.interfaces.mqtt.topic_parser import TopicParser
-from src.interfaces.mqtt.message import MQTTMessage
+from src.interfaces.mqtt.translator import TelemetryDTO, CommandAckDTO
 
 logger = logging.getLogger(__name__)
+
 
 class MQTTHandler:
 
@@ -17,7 +17,7 @@ class MQTTHandler:
             "TelemetryDTO": self._handle_telemetry,
             "CommandAckDTO": self._handle_ack,
         }
-    
+
     def handle(self, topic: str, payload: dict):
         dto = self.translator.translate(topic, payload)
 
@@ -35,7 +35,6 @@ class MQTTHandler:
             device_id=dto.device_id,
             payload=dto.payload
         )
-
 
     def _handle_ack(self, dto):
         self.ack_uc.execute(

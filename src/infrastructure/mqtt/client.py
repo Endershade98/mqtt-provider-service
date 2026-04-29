@@ -114,7 +114,7 @@ class MQTTClient:
         )
 
         try:
-            self.message_handler.handle(message)
+            self.message_handler.handle(message.topic, message.payload)
         except Exception:
             logger.exception("Error while handling MQTT message")
 

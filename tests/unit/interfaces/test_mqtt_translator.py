@@ -9,5 +9,5 @@ def test_translate_telemetry_message():
     translator = MQTTMessageTranslator()
     dto = translator.translate(topic, payload)
 
-    assert dto.device_id == "device123"
+    assert dto.device_id.value == "device123"
     assert dto.payload == {"temp": 25}
