@@ -1,24 +1,43 @@
 # src/interfaces/mqtt/handlers.py
 import logging
 
+from src.interfaces.mqtt.translator import TelemetryDTO, CommandAckDTO
+
 logger = logging.getLogger(__name__)
 
 
 class MQTTHandler:
 
-    def __init__(self, telemetry_use_case):
-        self.telemetry_use_case = telemetry_use_case
+    def __init__(self, telemetry_uc, ack_uc, translator):
+        self.telemetry_uc = telemetry_uc
+        self.ack_uc = ack_uc
+        self.translator = translator
+
+        self.dispatch_table = {
+            "TelemetryDTO": self._handle_telemetry,
+            "CommandAckDTO": self._handle_ack,
+        }
 
     def handle(self, topic: str, payload: dict):
-        logger.info(f"Handling MQTT message: {topic}")
+        dto = self.translator.translate(topic, payload)
 
-        device_id = self._extract_device_id(topic)
+        dto_type = dto.__class__.__name__
 
-        self.telemetry_use_case.execute(
-            device_id=device_id,
-            payload=payload
+        handler = self.dispatch_table.get(dto_type)
+
+        if handler is None:
+            raise ValueError(f"Unsupported DTO: {dto_type}")
+
+        handler(dto)
+
+    def _handle_telemetry(self, dto):
+        self.telemetry_uc.execute(
+            device_id=dto.device_id,
+            payload=dto.payload
         )
 
-    def _extract_device_id(self, topic: str) -> str:
-        parts = topic.split("/")
-        return parts[3]  # adattare al tuo schema
+    def _handle_ack(self, dto):
+        self.ack_uc.execute(
+            device_id=dto.device_id,
+            payload=dto.payload
+        )

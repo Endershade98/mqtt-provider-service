@@ -110,7 +110,7 @@ def test_transaction_commit_success():
         organization="org"
     )
 
-    device.mark_online(datetime.now())
+    device.mark_online(timezone.now())
     events = device.pull_events()
 
     repo.save(device)

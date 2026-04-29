@@ -1,5 +1,5 @@
 # src/application/use_cases/update_device_state.py
-from datetime import datetime
+from django.utils import timezone
 from src.domain.device.value_objects import DeviceId
 
 
@@ -14,9 +14,9 @@ class UpdateDeviceStateUseCase:
         device = self.device_repository.get(device_id)
 
         if is_online:
-            device.mark_online(datetime.datetime.now())
+            device.mark_online(timezone.now())
         else:
-            device.mark_offline(now=datetime.datetime.now())
+            device.mark_offline(now=timezone.now())
 
         events = device.pull_events()
 
