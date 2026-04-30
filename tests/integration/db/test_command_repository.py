@@ -4,7 +4,7 @@ import pytest
 from src.domain.command.entity import Command
 from src.domain.device.value_objects import CommandId, DeviceId
 from src.infrastructure.persistence.django.models import CommandModel
-from src.infrastructure.persistence.django.repositories import DjangoCommandRepository
+from src.infrastructure.persistence.django.repositories.command_repository import DjangoCommandRepository
 
 
 @pytest.mark.django_db

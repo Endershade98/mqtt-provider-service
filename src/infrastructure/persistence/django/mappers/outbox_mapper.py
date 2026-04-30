@@ -1,28 +1,36 @@
 # src/infrastructure/persistence/django/mappers/outbox_mapper.py
-import json
+
 from datetime import datetime
-from src.infrastructure.persistence.django.models import OutboxModel
 
 
 def serialize_event(event):
-    payload = event.__dict__.copy()
+    payload = {}
 
-    # converti datetime -> ISO string
-    for k, v in payload.items():
-        if isinstance(v, datetime):
+    for k, v in event.__dict__.items():
+
+        # Value Objects
+        if hasattr(v, "value"):
+            payload[k] = v.value
+
+        # datetime
+        elif isinstance(v, datetime):
             payload[k] = v.isoformat()
+
+        else:
+            payload[k] = v
 
     return {
         "type": event.__class__.__name__,
         "payload": payload
     }
 
+
 class OutboxMapper:
 
     @staticmethod
-    def from_event(event, aggregate_id: str) -> OutboxModel:
-        return OutboxModel(
-            event_type=event.__class__.__name__,
-            aggregate_id=aggregate_id,
-            payload=event.__dict__,
-        )
+    def from_event(event, aggregate_id: str):
+        return {
+            "event_type": event.__class__.__name__,
+            "aggregate_id": aggregate_id,
+            "payload": serialize_event(event),
+        }
