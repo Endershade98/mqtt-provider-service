@@ -88,3 +88,20 @@ class Device:
         events = self._events[:]
         self._events.clear()
         return events
+
+    def update_last_seen(self, timestamp: datetime):
+        """
+        Domain behavior:
+        update device heartbeat timestamp
+        """
+        self.last_seen = timestamp
+
+        # opzionale: evento di dominio
+        from src.domain.device.events import DeviceMarkedOnline
+
+        self._events.append(
+            DeviceMarkedOnline(
+                device_id=self.id,
+                timestamp=timestamp
+            )
+        )

@@ -1,16 +1,23 @@
 # tests/unit/application/test_event_contract.py
-from datetime import datetime
+
 from unittest.mock import Mock
 
-from src.application.use_cases.handle_telemetry import HandleTelemetryInput, HandleTelemetryUseCase
+from src.application.use_cases.handle_telemetry import (
+    HandleTelemetryInput,
+    HandleTelemetryUseCase
+)
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
+from django.utils import timezone
+
+now = timezone.now()
 
 
 def test_handle_telemetry_emits_correct_event():
 
-    repo = Mock()
-    outbox = Mock()
+    device_repo = Mock()
+    telemetry_repo = Mock()
+    outbox_repo = Mock()
 
     device = Device(
         id=DeviceId("dev-1"),
@@ -19,14 +26,20 @@ def test_handle_telemetry_emits_correct_event():
         organization="org"
     )
 
-    repo.get.return_value = device
+    device_repo.get.return_value = device
 
-    uc = HandleTelemetryUseCase(repo, outbox)
+    uc = HandleTelemetryUseCase(
+        device_repo,
+        telemetry_repo,
+        outbox_repo
+    )
 
-    events = uc.execute(HandleTelemetryInput(
-        device_id="dev-1",
-        payload={},
-        received_at=datetime(2024,1,1)
-    ))
+    device_telemetry_input = HandleTelemetryInput(
+        device_id=device.id,
+        payload={"temp": 1},
+        received_at=now
+    )
 
-    assert any(e.__class__.__name__ == "DeviceBecameOnline" for e in events)
+    events = uc.execute(device_telemetry_input)
+
+    

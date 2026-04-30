@@ -41,3 +41,12 @@ class OutboxModel(BaseModel):
     class Meta:
         db_table = "outbox"
 
+class TelemetryModel(models.Model):
+    device_id = models.CharField(max_length=255)
+    payload = models.JSONField()
+    received_at = models.DateTimeField()
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "telemetry"

@@ -1,8 +1,13 @@
 # src/domain/device/events.py
 from dataclasses import dataclass
-import datetime
+from datetime import datetime
+from src.domain.device.value_objects import DeviceId
 
 
+@dataclass
+class DeviceMarkedOnline:
+    device_id: DeviceId
+    timestamp: datetime
 
 @dataclass(frozen=True)
 class DeviceBecameOnline:

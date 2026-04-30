@@ -8,11 +8,9 @@ from django.utils import timezone
 from src.domain.device.entity import Device
 from src.domain.device.events import DeviceBecameOffline, DeviceBecameOnline
 from src.domain.device.value_objects import DeviceId
-from src.infrastructure.persistence.django.outbox_repository import DjangoOutboxRepository
-from src.infrastructure.persistence.django.repositories import DjangoDeviceRepository
-
-from src.infrastructure.persistence.django.repositories import DjangoDeviceRepository
 from src.infrastructure.persistence.django.models import DeviceModel, OutboxModel
+from src.infrastructure.persistence.django.repositories.device_repository import DjangoDeviceRepository
+from src.infrastructure.persistence.django.repositories.outbox_repository import DjangoOutboxRepository
 
 from django.db import transaction
 
