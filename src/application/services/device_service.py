@@ -1,4 +1,5 @@
 # src/application/services/device_service.py
+
 from src.domain.device.entity import Device
 from src.domain.telemetry.entity import Telemetry
 

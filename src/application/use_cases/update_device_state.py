@@ -1,6 +1,5 @@
 # src/application/use_cases/update_device_state.py
 from django.utils import timezone
-from src.domain.device.value_objects import DeviceId
 
 
 class UpdateDeviceStateUseCase:

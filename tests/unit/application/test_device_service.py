@@ -1,15 +1,16 @@
 # tests/unit/application/test_device_service.py
 
-from datetime import datetime
-
-from src.application.services.device_service import DeviceService
-from src.domain.device.entity import Device
-from src.domain.device.value_objects import DeviceId
-from src.domain.telemetry.entity import Telemetry
 from django.utils import timezone
 from datetime import datetime
 
+from src.application.services.device_service import DeviceService
+
+from src.domain.device.entity import Device
+from src.domain.device.value_objects import DeviceId
+from src.domain.telemetry.entity import Telemetry
+
 date = timezone.make_aware(datetime(2024, 1, 1, 12, 0, 0))
+
 
 def test_record_telemetry_triggers_online_event():
     device = Device(

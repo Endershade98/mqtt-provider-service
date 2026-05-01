@@ -1,12 +1,14 @@
 # tests/unit/domain/telemetry/test_telemetry_device_integration.py
-import pytest
+
 from datetime import timedelta
 from django.utils import timezone
+
 from src.application.services.device_service import DeviceService
+
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
 from src.domain.telemetry.entity import Telemetry
-from src.domain.telemetry.events import TelemetryReceived
+
 
 service = DeviceService()
 

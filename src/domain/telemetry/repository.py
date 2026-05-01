@@ -1,4 +1,5 @@
 # src/domain/telemetry/repository.py
+
 from abc import ABC, abstractmethod
 from typing import List
 from src.domain.telemetry.entity import Telemetry

@@ -1,6 +1,8 @@
 # src/infrastructure/persistence/django/mappers/command_mapper.py
+
 from src.domain.command.entity import Command
-from src.domain.device.value_objects import CommandId, DeviceId
+from src.domain.device.value_objects import DeviceId
+from src.domain.command.value_objects import CommandId
 from src.infrastructure.persistence.django.models import CommandModel
 
 

@@ -1,18 +1,24 @@
 # src/application/use_cases/ack_command.py
 
-class AcknowledgeCommandUseCase:
+from dataclasses import dataclass
+from django.db import transaction
 
-    def __init__(self, command_repository, outbox):
-        self.command_repository = command_repository
-        self.outbox = outbox
 
-    def execute(self, command):
+@dataclass(frozen=True)
+class AckCommandDTO:
+    device_id: str
+    payload: dict
 
-        command.ack()
 
-        events = command.pull_events()
+class AckCommandUseCase:
 
-        self.command_repository.save(command)
-        self.outbox.save(events)
+    def __init__(self, command_service):
+        self.command_service = command_service
 
-        return events
+    @transaction.atomic
+    def execute(self, dto: AckCommandDTO):
+
+        return self.command_service.ack(
+            device_id=dto.device_id,
+            payload=dto.payload,
+        )

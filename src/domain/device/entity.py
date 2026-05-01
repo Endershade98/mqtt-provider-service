@@ -1,4 +1,5 @@
 # src/domain/device/entity.py
+
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Optional, List
@@ -11,7 +12,7 @@ from src.domain.device.events import (
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class Device:
     id: DeviceId
     name: str
@@ -96,12 +97,9 @@ class Device:
         """
         self.last_seen = timestamp
 
-        # opzionale: evento di dominio
-        from src.domain.device.events import DeviceMarkedOnline
-
         self._events.append(
-            DeviceMarkedOnline(
-                device_id=self.id,
-                timestamp=timestamp
+            DeviceBecameOnline(
+                device_id=self.id.value,
+                occurred_at=timestamp
             )
         )

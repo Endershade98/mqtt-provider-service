@@ -1,13 +1,16 @@
 # tests/integration/db/test_transaction_atomicity.py
+
 import pytest
 
 from datetime import datetime
 from unittest.mock import patch
 
 from django.utils import timezone
+
 from src.domain.device.entity import Device
 from src.domain.device.events import DeviceBecameOffline, DeviceBecameOnline
 from src.domain.device.value_objects import DeviceId
+
 from src.infrastructure.persistence.django.models import DeviceModel, OutboxModel
 from src.infrastructure.persistence.django.repositories.device_repository import DjangoDeviceRepository
 from src.infrastructure.persistence.django.repositories.outbox_repository import DjangoOutboxRepository

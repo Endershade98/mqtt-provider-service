@@ -1,10 +1,12 @@
 # tests/integration/db/test_device_repository.py
+
 import pytest
 
 from django.core.exceptions import ObjectDoesNotExist
 
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
+
 from src.infrastructure.persistence.django.repositories.device_repository import DjangoDeviceRepository
 from src.infrastructure.persistence.django.models import DeviceModel
 

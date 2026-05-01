@@ -1,7 +1,10 @@
 # tests/unit/domain/shared/test_value_objects.py
+
 import pytest
 
-from src.domain.device.value_objects import DeviceId, Topic
+from src.interfaces.mqtt.topic_parser import Topic
+
+from src.domain.device.value_objects import DeviceId
 from src.domain.shared.exceptions import (
     InvalidDeviceId,
     InvalidTopicFormat

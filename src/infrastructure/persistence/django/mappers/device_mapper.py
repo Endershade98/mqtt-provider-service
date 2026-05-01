@@ -1,4 +1,5 @@
 # src/infrastructure/persistence/django/mappers/device_mapper.py
+
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
 from src.infrastructure.persistence.django.models import DeviceModel

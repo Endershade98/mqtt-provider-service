@@ -5,8 +5,9 @@ from datetime import datetime
 
 from src.application.use_cases.handle_telemetry import (
     HandleTelemetryUseCase,
-    HandleTelemetryInput
+    HandleTelemetryDTO
 )
+
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
 
@@ -33,7 +34,7 @@ def test_outbox_is_called_with_events():
     )
 
     use_case.execute(
-        HandleTelemetryInput(
+        HandleTelemetryDTO(
             device_id="dev-1",
             payload={"temp": 1},
             received_at=datetime(2024, 1, 1, 12, 0, 0)
@@ -66,7 +67,7 @@ def test_use_case_saves_events_to_outbox():
     )
 
     events = uc.execute(
-        HandleTelemetryInput(
+        HandleTelemetryDTO(
             device_id="dev-1",
             payload={"temp": 10},
             received_at=datetime(2024, 1, 1)

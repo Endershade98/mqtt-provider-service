@@ -1,12 +1,14 @@
 # tests/unit/domain/device/test_device_events.py
+
 from datetime import datetime
+from django.utils import timezone
 
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
-from django.utils import timezone
-from datetime import datetime
+
 
 date=timezone.make_aware(datetime(2024, 1, 1, 12, 0, 0))
+
 
 def test_device_emits_online_event():
     device = Device(

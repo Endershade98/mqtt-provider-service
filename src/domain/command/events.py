@@ -1,4 +1,5 @@
 # src/domain/command/events.py
+
 from dataclasses import dataclass
 
 

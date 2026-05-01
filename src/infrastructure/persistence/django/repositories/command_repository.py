@@ -1,23 +1,25 @@
 # src/infrastructure/persistence/django/repositories/command_repository.py
 
-from src.domain.device.repository import DeviceRepository
+from src.domain.command.entity import Command
 from src.domain.command.repository import CommandRepository
-from src.domain.device.value_objects import CommandId
+from src.domain.command.value_objects import CommandId
+from src.domain.shared.exceptions import CommandNotFound
 
 from src.infrastructure.persistence.django.models import CommandModel
 from src.infrastructure.persistence.django.mappers.command_mapper import CommandMapper
 
 
-from django.db import transaction
-
-
 class DjangoCommandRepository(CommandRepository):
 
-    def get(self, command_id: CommandId):
-        model = CommandModel.objects.get(id=command_id.value)
+    def get(self, command_id: CommandId) -> Command:
+        try:
+            model = CommandModel.objects.get(id=command_id.value)
+        except CommandModel.DoesNotExist:
+            raise CommandNotFound(f"Command with id {command_id.value} not found")
+
         return CommandMapper.to_domain(model)
 
-    def save(self, command):
+    def save(self, command: Command) -> None:
         model = CommandMapper.to_model(command)
 
         CommandModel.objects.update_or_create(

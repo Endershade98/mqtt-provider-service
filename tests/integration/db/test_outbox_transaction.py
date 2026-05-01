@@ -1,7 +1,7 @@
 # tests/integration/db/test_outbox_transaction.py
 
 import pytest
-from unittest.mock import patch
+
 from datetime import datetime
 from django.utils import timezone
 from django.db import transaction

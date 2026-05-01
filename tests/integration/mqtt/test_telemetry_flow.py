@@ -2,9 +2,9 @@
 
 import pytest
 from django.utils import timezone
-from datetime import datetime
 
 from src.interfaces.mqtt.handlers import MQTTHandler
+
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
 

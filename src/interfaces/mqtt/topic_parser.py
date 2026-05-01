@@ -1,24 +1,40 @@
 # src/interfaces/mqtt/topic_parser.py
+
 from dataclasses import dataclass
+from enum import Enum
+from src.domain.device.value_objects import DeviceId
+from src.domain.shared.exceptions import InvalidTopicFormat
+
+
+class TopicChannel(str, Enum):
+    TELEMETRY = "telemetry"
+    COMMAND = "command"
+    ACK = "ack"
 
 
 @dataclass(frozen=True)
-class ParsedTopic:
-    device_id: str
-    message_type: str
+class Topic:
+    value: str
 
-
-class TopicParser:
-
-    @staticmethod
-    def parse(topic: str) -> ParsedTopic:
-        parts = topic.split("/")
+    def __post_init__(self):
+        parts = self.value.split("/")
 
         if len(parts) < 3:
-            raise ValueError(f"Invalid topic: {topic}")
+            raise InvalidTopicFormat(self.value)
 
-        # esempio: devices/{device_id}/telemetry
-        return ParsedTopic(
-            device_id=parts[1],
-            message_type=parts[2],
-        )
+        channel = parts[-1]
+        device_id = parts[-2]
+
+        try:
+            topic_channel = TopicChannel(channel)
+        except ValueError:
+            raise InvalidTopicFormat(f"Unknown channel: {channel}")
+
+        object.__setattr__(self, "_device_id", DeviceId(device_id))
+        object.__setattr__(self, "_channel", topic_channel)
+
+    def get_device_id(self) -> DeviceId:
+        return self._device_id
+
+    def get_channel(self) -> TopicChannel:
+        return self._channel

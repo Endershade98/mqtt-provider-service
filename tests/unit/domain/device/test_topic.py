@@ -1,6 +1,8 @@
 # tests/unit/domain/device/test_topic.py
+
 import pytest
-from src.domain.device.value_objects import Topic
+
+from src.interfaces.mqtt.topic_parser import Topic
 from src.domain.shared.exceptions import InvalidTopicFormat
 
 

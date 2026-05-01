@@ -1,9 +1,12 @@
 # tests/unit/domain/device/test_device.py
+
 import pytest
+
 from datetime import datetime, timedelta
 from django.utils import timezone
 
 from src.application.services.device_service import DeviceService
+
 from src.domain.device.entity import Device
 from src.domain.device.events import (
     DeviceBecameOnline,

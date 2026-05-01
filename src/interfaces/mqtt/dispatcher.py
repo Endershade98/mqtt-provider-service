@@ -1,18 +1,20 @@
 # src/interfaces/mqtt/dispatcher.py
-from typing import Any, Dict, Type
+
+from src.interfaces.mqtt.adapters import MQTTToApplicationAdapter
 
 
 class MQTTDispatcher:
-    def __init__(self, routes: Dict[Type, Any]):
+
+    def __init__(self, routes):
         self.routes = routes
 
-    def dispatch(self, dto):
-        handler = self.routes.get(type(dto))
+    def dispatch(self, envelope):
 
-        if not handler:
-            raise ValueError(f"No handler for DTO type: {type(dto)}")
+        key, dto = MQTTToApplicationAdapter.resolve(envelope)
 
-        return handler.execute(
-            device_id=dto.device_id,
-            payload=dto.payload
-        )
+        use_case = self.routes.get(key)
+
+        if not use_case:
+            raise ValueError(f"No handler for key: {key}")
+
+        return use_case.execute(dto)

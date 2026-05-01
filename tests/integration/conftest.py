@@ -10,9 +10,8 @@ from src.domain.device.value_objects import DeviceId
 from src.infrastructure.persistence.django.models import (
     DeviceModel,
     OutboxModel,
-    TelemetryModel,   # 👈 AGGIUNGI
+    TelemetryModel, 
 )
-
 from src.infrastructure.persistence.django.repositories.device_repository import DjangoDeviceRepository
 from src.infrastructure.persistence.django.repositories.outbox_repository import DjangoOutboxRepository
 from src.infrastructure.persistence.django.repositories.telemetry_repository import DjangoTelemetryRepository  # 👈 AGGIUNGI

@@ -1,4 +1,5 @@
 # src/domain/command/entity.py
+
 from dataclasses import dataclass, field
 from typing import List
 
@@ -8,14 +9,10 @@ from src.domain.command.events import (
     CommandAcknowledged,
     CommandFailed
 )
-from src.domain.device.value_objects import CommandId, DeviceId
+from src.domain.device.value_objects import DeviceId
+from src.domain.command.value_objects import CommandStatus, CommandId
+from src.domain.shared.exceptions import InvalidStateTransition
 
-
-class CommandStatus:
-    PENDING = "PENDING"
-    SENT = "SENT"
-    ACKED = "ACKED"
-    FAILED = "FAILED"
 
 ALLOWED_TRANSITIONS = {
     CommandStatus.PENDING: [CommandStatus.SENT, CommandStatus.FAILED],
@@ -24,20 +21,20 @@ ALLOWED_TRANSITIONS = {
     CommandStatus.FAILED: [],
 }
 
-@dataclass
+@dataclass(frozen=True)
 class Command:
     command_id: CommandId
     device_id: DeviceId
     payload: dict
-    status: str = CommandStatus.PENDING
+    status: CommandStatus = CommandStatus.PENDING
 
     _events: List = field(default_factory=list, init=False)
 
-    def _ensure_transition(self, new_status: str):
+    def _ensure_transition(self, new_status: CommandStatus):
         allowed = ALLOWED_TRANSITIONS[self.status]
 
         if new_status not in allowed:
-            raise ValueError(
+            raise InvalidStateTransition(
                 f"Invalid transition from {self.status} to {new_status}"
             )
 

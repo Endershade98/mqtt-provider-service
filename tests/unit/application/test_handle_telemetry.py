@@ -1,15 +1,17 @@
 # tests/unit/application/test_handle_telemetry.py
-from unittest.mock import Mock
+
 import pytest
+from django.utils import timezone
+from unittest.mock import Mock
 
 from src.application.use_cases.handle_telemetry import (
     HandleTelemetryUseCase,
-    HandleTelemetryInput,
+    HandleTelemetryDTO,
 )
 
 from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
-from django.utils import timezone
+
 
 now = timezone.now()
 
@@ -21,7 +23,7 @@ def make_device():
 
 
 def make_input():
-    return HandleTelemetryInput(
+    return HandleTelemetryDTO(
         device_id=DeviceId("dev-1"),  # ✅ FIX: Value Object
         payload={"t": 1},
         received_at=now

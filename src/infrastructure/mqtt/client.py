@@ -1,4 +1,5 @@
 # src/infrastructure/mqtt/client.py
+
 import json
 import logging
 from typing import Optional

@@ -1,15 +1,11 @@
 # tests/unit/domain/command/test_command.py
-import pytest
-from datetime import datetime
 
-from src.domain.command.entity import Command, CommandStatus
-from src.domain.command.events import (
-    CommandCreated,
-    CommandSent,
-    CommandAcknowledged,
-    CommandFailed,
-)
-from src.domain.device.value_objects import CommandId, DeviceId
+import pytest
+
+from src.domain.command.entity import Command
+from src.domain.command.value_objects import CommandStatus, CommandId
+from src.domain.device.value_objects import DeviceId
+from src.domain.command.events import CommandCreated
 
 
 # ----------------------------------------

@@ -1,8 +1,12 @@
 # tests/integration/db/test_command_repository.py
+
 import pytest
 
 from src.domain.command.entity import Command
-from src.domain.device.value_objects import CommandId, DeviceId
+
+from src.domain.device.value_objects import DeviceId
+from src.domain.command.value_objects import CommandId
+
 from src.infrastructure.persistence.django.models import CommandModel
 from src.infrastructure.persistence.django.repositories.command_repository import DjangoCommandRepository
 

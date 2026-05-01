@@ -1,4 +1,5 @@
 # src/application/ports/outbox.py
+
 from abc import ABC, abstractmethod
 
 class OutboxPort(ABC):
