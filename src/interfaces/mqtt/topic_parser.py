@@ -12,7 +12,7 @@ class TopicChannel(str, Enum):
     ACK = "ack"
 
 
-@dataclass(frozen=True)
+@dataclass
 class Topic:
     value: str
 

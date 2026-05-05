@@ -29,7 +29,7 @@ def test_telemetry_marks_device_online():
 
     service.record_telemetry(device, telemetry)
 
-    assert device.is_online is True
+    assert device.status == DeviceStatus.ONLINE
     assert device.last_seen == telemetry.received_at
 
 def test_multiple_telemetry_no_duplicate_online_event():
@@ -57,7 +57,7 @@ def test_multiple_telemetry_no_duplicate_online_event():
     service.record_telemetry(device, telemetry1)
     service.record_telemetry(device, telemetry2)
 
-    assert device.is_online is True
+    assert device.status == DeviceStatus.ONLINE
     assert device.last_seen == telemetry2.received_at
 
 

@@ -7,40 +7,26 @@ from src.application.use_cases.handle_telemetry import (
     HandleTelemetryUseCase,
     HandleTelemetryDTO
 )
-from src.domain.device.entity import Device
 from src.domain.device.value_objects import DeviceId
-
 
 now = timezone.now()
 
 
 def test_handle_telemetry_emits_correct_event():
 
-    device_repo = Mock()
-    telemetry_repo = Mock()
-    outbox_repo = Mock()
+    device_service = Mock()
 
-    device = Device(
-        id=DeviceId("dev-1"),
-        name="test",
-        device_type="sensor",
-        organization="org"
-    )
+    uc = HandleTelemetryUseCase(device_service)
 
-    device_repo.get.return_value = device
-
-    uc = HandleTelemetryUseCase(
-        device_repo,
-        telemetry_repo,
-        outbox_repo
-    )
-
-    device_telemetry_input = HandleTelemetryDTO(
-        device_id=device.id,
+    dto = HandleTelemetryDTO(
+        device_id=DeviceId("dev-1"),
         payload={"temp": 1},
         received_at=now
     )
 
-    events = uc.execute(device_telemetry_input)
+    device_service.record_telemetry.return_value = ["DeviceBecameOnline"]
 
-    
+    events = uc.execute(dto)
+
+    assert events == ["DeviceBecameOnline"]
+    device_service.record_telemetry.assert_called_once_with(dto)

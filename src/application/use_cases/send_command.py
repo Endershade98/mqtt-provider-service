@@ -1,38 +1,32 @@
 # src/application/use_cases/send_command.py
 
+from src.application.use_cases.base import UseCase
+from src.application.use_cases.dto.send_command_dto import SendCommandDTO
+
 from src.domain.command.entity import Command
-from src.domain.device.value_objects import DeviceId
 from src.domain.command.value_objects import CommandId
-from django.db import transaction
+from src.domain.device.value_objects import DeviceId
 
-class SendCommandUseCase:
 
-    def __init__(self, command_repository, outbox_repository, mqtt_publisher):
+class SendCommandUseCase(UseCase):
+
+    def __init__(self, command_repository, uow, outbox):
+        super().__init__(uow=uow, outbox=outbox)
         self.command_repository = command_repository
-        self.outbox_repository = outbox_repository
-        self.mqtt_publisher = mqtt_publisher
-    
-    @transaction.atomic
-    def execute(self, dto):
 
-        command = Command.create(
-            command_id=CommandId(dto.command_id),
-            device_id=DeviceId(dto.device_id),
-            payload=dto.payload
-        )
+    def execute(self, dto: SendCommandDTO):
 
-        command.send()
+        with self.uow:
+            command = Command.create(
+                command_id=CommandId(dto.command_id),
+                device_id=DeviceId(dto.device_id),
+                payload=dto.payload,
+            )
 
-        self.command_repository.save(command)
-        self.outbox_repository.save(command.pull_events())
+            command.send()
 
-        self.mqtt_publisher.publish(
-            topic=f"devices/{dto.device_id}/command",
-            payload={
-                "command_id": dto.command_id,
-                "payload": dto.payload,
-                "status": "sent"
-            }
-        )
+            self.commit(command, self.command_repository)
 
-        return command
+            self.uow.commit()
+
+            return command

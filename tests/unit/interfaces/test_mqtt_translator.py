@@ -5,6 +5,7 @@ from src.interfaces.mqtt.translator import MQTTMessageTranslator
 
 
 def test_translate_telemetry_message():
+
     topic = "iot/devices/device123/telemetry"
     payload = {"temp": 25}
 

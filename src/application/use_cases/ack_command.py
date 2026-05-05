@@ -1,24 +1,31 @@
 # src/application/use_cases/ack_command.py
 
-from dataclasses import dataclass
-from django.db import transaction
+from src.application.use_cases.base import UseCase
+from src.application.use_cases.dto.ack_command_dto import AckCommandDTO
+
+from src.domain.command.value_objects import CommandId
 
 
-@dataclass(frozen=True)
-class AckCommandDTO:
-    device_id: str
-    payload: dict
+class AckCommandUseCase(UseCase):
 
+    def __init__(self, command_repository, uow, outbox):
+        super().__init__(uow=uow, outbox=outbox)
+        self.command_repository = command_repository
 
-class AckCommandUseCase:
-
-    def __init__(self, command_service):
-        self.command_service = command_service
-
-    @transaction.atomic
     def execute(self, dto: AckCommandDTO):
 
-        return self.command_service.ack(
-            device_id=dto.device_id,
-            payload=dto.payload,
-        )
+        with self.uow:
+            command = self.command_repository.get(
+                CommandId(dto.command_id)
+            )
+
+            if command is None:
+                raise ValueError("Command not found")
+
+            command.ack()
+
+            self.commit(command, self.command_repository)
+
+            self.uow.commit()
+
+            return command
