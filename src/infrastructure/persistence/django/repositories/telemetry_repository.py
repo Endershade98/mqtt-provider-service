@@ -3,25 +3,21 @@
 from src.domain.device.value_objects import DeviceId
 from src.domain.telemetry.entity import Telemetry
 from src.infrastructure.persistence.django.models import TelemetryModel
-from src.domain.telemetry.repository import TelemetryRepository
 
-class DjangoTelemetryRepository(TelemetryRepository):
+
+class DjangoTelemetryRepository:
 
     def save(self, telemetry: Telemetry) -> None:
         TelemetryModel.objects.create(
-            device_id=(telemetry.device_id.value),
+            device_id=telemetry.device_id.value,
             payload=telemetry.payload,
             received_at=telemetry.received_at,
         )
 
     def get_all_for_device(self, device_id: DeviceId) -> list[Telemetry]:
-        raw_id = device_id.value if hasattr(device_id, "value") else device_id
-
-        qs = (
-            TelemetryModel.objects
-            .filter(device_id=raw_id)
-            .order_by("received_at")
-        )
+        qs = TelemetryModel.objects.filter(
+            device_id=device_id.value
+        ).order_by("received_at")
 
         return [
             Telemetry(

@@ -11,6 +11,10 @@ from src.domain.device.value_objects import (
     DeviceId,
     DeviceStatus,
 )
+from src.application.exceptions import (
+    DeviceNotFoundError,
+    UnsupportedDeviceStateTransitionError,
+)
 
 
 class UpdateDeviceStateUseCase(UseCase):
@@ -27,7 +31,7 @@ class UpdateDeviceStateUseCase(UseCase):
             )
 
             if device is None:
-                raise ValueError("Device not found")
+                raise DeviceNotFoundError(dto.device_id)
 
             now = datetime.utcnow()
 
@@ -44,7 +48,7 @@ class UpdateDeviceStateUseCase(UseCase):
                 )
 
             else:
-                raise ValueError("Unsupported target status")
+                raise UnsupportedDeviceStateTransitionError(target_status=dto.target_status)
 
             events = self.commit(device, self.device_repository)
 

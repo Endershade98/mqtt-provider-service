@@ -73,20 +73,23 @@ class Device:
         if self.status != DeviceStatus.ONLINE:
             return
 
-        if not self.last_seen:
+        if self.last_seen is None:
             return
 
-        delta = (now - self.last_seen).total_seconds()
+        delta_seconds = (now - self.last_seen).total_seconds()
 
-        if delta > threshold_seconds:
-            self.status = DeviceStatus.STALE
+        # FIX: include equality edge case (test deterministic)
+        if delta_seconds >= threshold_seconds and threshold_seconds >= 0:
 
-            self._events.append(
-                DeviceMarkedStale(
-                    device_id=self.id.value,
-                    occurred_at=now
+            if self.status != DeviceStatus.STALE:
+                self.status = DeviceStatus.STALE
+
+                self._events.append(
+                    DeviceMarkedStale(
+                        device_id=self.id.value,
+                        occurred_at=now
+                    )
                 )
-            )
 
     # -----------------------------------
 

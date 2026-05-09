@@ -6,6 +6,8 @@ from src.application.use_cases.dto.handle_telemetry_dto import HandleTelemetryDT
 from src.domain.device.value_objects import DeviceId
 from src.domain.telemetry.entity import Telemetry
 
+from src.application.exceptions import DeviceNotFoundError
+
 
 class HandleTelemetryUseCase(UseCase):
 
@@ -17,19 +19,19 @@ class HandleTelemetryUseCase(UseCase):
         outbox,
     ):
         super().__init__(uow=uow, outbox=outbox)
-
         self.device_repository = device_repository
         self.telemetry_repository = telemetry_repository
 
     def execute(self, dto: HandleTelemetryDTO):
 
         with self.uow:
+
             device = self.device_repository.get(
                 DeviceId(dto.device_id)
             )
 
             if device is None:
-                raise ValueError("Device not found")
+                raise DeviceNotFoundError(dto.device_id)
 
             telemetry = Telemetry(
                 device_id=device.id,

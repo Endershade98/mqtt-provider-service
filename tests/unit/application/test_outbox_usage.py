@@ -1,47 +1,38 @@
 # tests/unit/application/test_outbox_usage.py
 
 from unittest.mock import Mock
-from datetime import datetime
-
-from src.application.use_cases.handle_telemetry import (
-    HandleTelemetryUseCase,
-    HandleTelemetryDTO
-)
-from src.domain.device.value_objects import DeviceId
+from src.application.use_cases.handle_telemetry import HandleTelemetryUseCase
+from src.application.use_cases.dto.handle_telemetry_dto import HandleTelemetryDTO
+from tests.unit.application.fakes.fake_unit_of_work import FakeUnitOfWork
+from tests.unit.application.fakes.fake_outbox import FakeOutbox
 
 
-def test_outbox_is_called_with_events():
+def test_outbox_is_called():
 
-    device_service = Mock()
+    device_repo = Mock()
+    telemetry_repo = Mock()
 
-    device_service.record_telemetry.return_value = ["DeviceBecameOnline"]
+    outbox = FakeOutbox()
+    uow = FakeUnitOfWork()
 
-    uc = HandleTelemetryUseCase(device_service)
+    device = Mock()
+    device.pull_events.return_value = ["DeviceBecameOnline"]
 
-    uc.execute(
-        HandleTelemetryDTO(
-            device_id=DeviceId("dev-1"),
-            payload={"temp": 1},
-            received_at=datetime(2024, 1, 1, 12, 0, 0)
-        )
+    device_repo.get.return_value = device
+
+    uc = HandleTelemetryUseCase(
+        device_repo,
+        telemetry_repo,
+        uow,
+        outbox
     )
 
-    device_service.record_telemetry.assert_called_once()
-
-
-def test_use_case_saves_events_to_outbox():
-
-    device_service = Mock()
-    device_service.record_telemetry.return_value = ["DeviceBecameOnline"]
-
-    uc = HandleTelemetryUseCase(device_service)
-
-    uc.execute(
-        HandleTelemetryDTO(
-            device_id=DeviceId("dev-1"),
-            payload={"temp": 10},
-            received_at=datetime(2024, 1, 1)
-        )
+    dto = HandleTelemetryDTO(
+        device_id="dev-1",
+        payload={"temp": 10},
+        received_at=None
     )
 
-    device_service.record_telemetry.assert_called_once()
+    uc.execute(dto)
+
+    assert len(outbox.saved_events) == 1

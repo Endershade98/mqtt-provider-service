@@ -1,19 +1,29 @@
 # src/infrastructure/mqtt/publisher.py
 
-from src.domain.command.entity import Command
-
-
 class MqttPublisher:
+    """
+    Infrastructure adapter for MQTT publishing.
+    No domain dependency allowed.
+    """
 
-    def publish_command(self, command: Command):
+    def publish_command(
+        self,
+        command_id: str,
+        device_id: str,
+        payload: dict,
+        status: str
+    ) -> None:
 
-        topic = f"devices/{command.device_id.value}/command"
+        topic = f"devices/{device_id}/command"
 
-        payload = {
-            "command_id": command.command_id.value,
-            "device_id": command.device_id.value,
-            "payload": command.payload,
-            "status": command.status.value
+        message = {
+            "command_id": command_id,
+            "device_id": device_id,
+            "payload": payload,
+            "status": status,
         }
 
-        self.publish(topic, payload)
+        self.publish(topic, message)
+
+    def publish(self, topic: str, payload: dict):
+        raise NotImplementedError

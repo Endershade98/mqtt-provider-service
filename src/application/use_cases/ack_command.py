@@ -1,14 +1,18 @@
 # src/application/use_cases/ack_command.py
 
+from src.application.ports.outbox import OutboxPort
+from src.application.ports.unit_of_work import UnitOfWork
 from src.application.use_cases.base import UseCase
 from src.application.use_cases.dto.ack_command_dto import AckCommandDTO
 
+from src.domain.command.repository import CommandRepository
 from src.domain.command.value_objects import CommandId
+from src.application.exceptions import CommandNotFoundError
 
 
 class AckCommandUseCase(UseCase):
 
-    def __init__(self, command_repository, uow, outbox):
+    def __init__(self, command_repository:CommandRepository, uow:UnitOfWork, outbox:OutboxPort):
         super().__init__(uow=uow, outbox=outbox)
         self.command_repository = command_repository
 
@@ -20,7 +24,7 @@ class AckCommandUseCase(UseCase):
             )
 
             if command is None:
-                raise ValueError("Command not found")
+                raise CommandNotFoundError(dto.command_id)
 
             command.ack()
 

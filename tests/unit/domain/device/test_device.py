@@ -1,105 +1,118 @@
 # tests/unit/domain/device/test_device.py
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone, timedelta
 
 from src.domain.device.entity import Device
-from src.domain.device.events import (
-    DeviceBecameOnline,
-    DeviceBecameOffline,
-    DeviceMarkedStale,
-)
 from src.domain.device.value_objects import DeviceId, DeviceStatus
-
-
-date = datetime(2024, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
 def make_device():
     return Device(
-        id=DeviceId("dev-123"),
-        name="Test Device",
-        device_type="sensor",
-        organization="org"
+        id=DeviceId("dev-1"),
+        name="sensor",
+        device_type="iot",
+        organization="org",
     )
 
 
-# ----------------------------------
-# ONLINE
-# ----------------------------------
-
-def test_mark_online_changes_status_and_emits_event():
+def test_device_initial_state():
     device = make_device()
 
-    device.mark_online(date)
+    assert device.status == DeviceStatus.UNKNOWN
+    assert device.last_seen is None
+    assert device.is_active is True
 
-    events = device.pull_events()
+
+def test_device_becomes_online_on_heartbeat():
+    device = make_device()
+
+    now = datetime.now(timezone.utc)
+    device.record_heartbeat(now)
 
     assert device.status == DeviceStatus.ONLINE
-    assert device.last_seen == date
-    assert len(events) == 1
-    assert isinstance(events[0], DeviceBecameOnline)
-
-
-def test_mark_online_is_idempotent():
-    device = make_device()
-
-    device.mark_online(date)
-    device.mark_online(date)
+    assert device.last_seen == now
 
     events = device.pull_events()
-
     assert len(events) == 1
+    assert events[0].device_id == "dev-1"
+    assert events[0].occurred_at == now
 
 
-# ----------------------------------
-# OFFLINE
-# ----------------------------------
-
-def test_mark_offline_changes_status():
+def test_device_does_not_duplicate_online_event():
     device = make_device()
 
-    device.mark_online(date)
+    now = datetime.now(timezone.utc)
+
+    device.record_heartbeat(now)
     device.pull_events()
 
-    device.mark_offline(date)
+    device.record_heartbeat(now + timedelta(seconds=10))
 
     events = device.pull_events()
+
+    # nessun nuovo evento se già ONLINE
+    assert len(events) == 0
+
+
+def test_device_goes_offline():
+    device = make_device()
+
+    now = datetime.now(timezone.utc)
+
+    device.record_heartbeat(now)
+    device.pull_events()
+
+    device.mark_offline(now)
 
     assert device.status == DeviceStatus.OFFLINE
+
+    events = device.pull_events()
     assert len(events) == 1
-    assert isinstance(events[0], DeviceBecameOffline)
+    assert events[0].device_id == "dev-1"
 
 
-# ----------------------------------
-# STALE
-# ----------------------------------
-
-def test_check_stale_marks_device_stale():
+def test_device_offline_is_idempotent():
     device = make_device()
 
-    device.mark_online(date)
-    device.pull_events()
+    now = datetime.now(timezone.utc)
 
-    now = date + timedelta(minutes=10)
-
-    device.check_stale(now, threshold_seconds=300)
+    device.mark_offline(now)
+    device.mark_offline(now)
 
     events = device.pull_events()
 
-    assert device.status == DeviceStatus.STALE
-    assert len(events) == 1
-    assert isinstance(events[0], DeviceMarkedStale)
+    assert len(events) == 1  # solo primo evento
 
 
-def test_check_stale_does_nothing_if_recent():
+def test_device_check_stale_transitions():
     device = make_device()
 
-    device.mark_online(date)
+    now = datetime.now(timezone.utc)
+
+    device.record_heartbeat(now)
     device.pull_events()
 
-    now = date + timedelta(minutes=2)
+    later = now + timedelta(seconds=500)
 
-    device.check_stale(now, threshold_seconds=300)
+    device.check_stale(later, threshold_seconds=100)
+
+    assert device.status == DeviceStatus.STALE
+
+    events = device.pull_events()
+    assert len(events) == 1
+
+
+def test_device_not_marked_stale_if_recent():
+    device = make_device()
+
+    now = datetime.now(timezone.utc)
+
+    device.record_heartbeat(now)
+    device.pull_events()
+
+    later = now + timedelta(seconds=10)
+
+    device.check_stale(later, threshold_seconds=100)
 
     assert device.status == DeviceStatus.ONLINE
-    assert device.pull_events() == []
+    assert len(device.pull_events()) == 0
