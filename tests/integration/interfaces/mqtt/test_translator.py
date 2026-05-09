@@ -3,10 +3,8 @@
 from datetime import datetime
 
 from src.interfaces.mqtt.translator import MQTTMessageTranslator
-from src.application.use_cases.dto.mqtt_contracts import (
-    TelemetryContract,
-    AckContract,
-)
+from src.application.use_cases.dto.handle_telemetry_dto import HandleTelemetryDTO
+from src.application.use_cases.dto.ack_command_dto import AckCommandDTO
 
 
 def test_translate_telemetry_contract():
@@ -20,7 +18,7 @@ def test_translate_telemetry_contract():
         received_at=now,
     )
 
-    assert isinstance(result, TelemetryContract)
+    assert isinstance(result, HandleTelemetryDTO)
     assert result.device_id == "dev1"
     assert result.payload == {"temp": 22}
     assert result.received_at == now
@@ -35,5 +33,5 @@ def test_translate_ack_contract():
         received_at=datetime.utcnow(),
     )
 
-    assert isinstance(result, AckContract)
+    assert isinstance(result, AckCommandDTO)
     assert result.command_id == "cmd1"

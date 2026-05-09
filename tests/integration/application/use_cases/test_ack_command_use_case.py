@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.application.use_cases.ack_command import AckCommandUseCase
+from src.application.use_cases.ack_command import AcknowledgeCommandUseCase
 from src.application.use_cases.dto.ack_command_dto import AckCommandDTO
 from src.application.exceptions import CommandNotFoundError
 
@@ -52,7 +52,7 @@ def make_use_case(repo=None, uow=None, outbox=None):
     uow = uow or FakeUnitOfWork()
     outbox = outbox or FakeOutbox()
 
-    use_case = AckCommandUseCase(
+    use_case = AcknowledgeCommandUseCase(
         command_repository=repo,
         uow=uow,
         outbox=outbox,

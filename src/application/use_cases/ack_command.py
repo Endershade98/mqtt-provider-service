@@ -10,7 +10,7 @@ from src.domain.command.value_objects import CommandId
 from src.application.exceptions import CommandNotFoundError
 
 
-class AckCommandUseCase(UseCase):
+class AcknowledgeCommandUseCase(UseCase):
 
     def __init__(self, command_repository:CommandRepository, uow:UnitOfWork, outbox:OutboxPort):
         super().__init__(uow=uow, outbox=outbox)
@@ -19,6 +19,7 @@ class AckCommandUseCase(UseCase):
     def execute(self, dto: AckCommandDTO):
 
         with self.uow:
+
             command = self.command_repository.get(
                 CommandId(dto.command_id)
             )
@@ -29,6 +30,9 @@ class AckCommandUseCase(UseCase):
             command.ack()
 
             self.commit(command, self.command_repository)
+
+            # OUTBOX EMISSION (CRITICAL FIX)
+            self.outbox.save(command.pull_events())
 
             self.uow.commit()
 
