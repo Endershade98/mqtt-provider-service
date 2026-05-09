@@ -1,25 +1,23 @@
-FROM python:3.11-slim
+# docker/django/Dockerfile
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# System dependencies (PostgreSQL client for Django migrations/checks)
+ENV PYTHONUNBUFFERED=1
+
+# system deps (IMPORTANT: netcat for DB wait)
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    curl \
+    netcat-openbsd \
+    gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies first (better caching)
-COPY requirements.txt /app/
+# install dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
-COPY . /app/
+# copy project
+COPY . .
 
-# Default permission safety
+# make scripts executable
 RUN chmod +x /app/docker/entrypoints/*.sh
-
-EXPOSE 8000

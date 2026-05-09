@@ -3,6 +3,7 @@
 import os
 import logging
 
+from src.application.use_cases.mqtt_router import MQTTApplicationRouter
 from src.infrastructure.mqtt.client import MQTTClient
 from src.interfaces.mqtt.handlers import MQTTHandler
 from src.interfaces.mqtt.translator import MQTTMessageTranslator
@@ -20,42 +21,32 @@ logger = logging.getLogger(__name__)
 
 
 def main():
+
     logger.info("Bootstrapping MQTT worker...")
 
-    # ==========================================
-    # REPOSITORIES (Infrastructure)
-    # ==========================================
     device_repo = DeviceRepositoryImpl()
     command_repo = CommandRepositoryImpl()
 
-    # ==========================================
-    # USE CASES (Application Layer)
-    # ==========================================
     telemetry_uc = HandleTelemetryUseCase(
-        device_repo=device_repo
+        device_repository=device_repo,
     )
 
     ack_uc = AcknowledgeCommandUseCase(
-        command_repo=command_repo
+        command_repository=command_repo,
     )
 
-    # ==========================================
-    # TRANSLATOR (ACL)
-    # ==========================================
     translator = MQTTMessageTranslator()
 
-    # ==========================================
-    # HANDLER (Interface Layer)
-    # ==========================================
-    handler = MQTTHandler(
+    router = MQTTApplicationRouter(
         telemetry_uc=telemetry_uc,
         ack_uc=ack_uc,
-        translator=translator
     )
 
-    # ==========================================
-    # MQTT CLIENT (Infrastructure)
-    # ==========================================
+    handler = MQTTHandler(
+        translator=translator,
+        router=router,
+    )
+
     client = MQTTClient(
         broker=os.getenv("MQTT_BROKER_HOST", "mqtt"),
         port=int(os.getenv("MQTT_BROKER_PORT", 1883)),
@@ -64,7 +55,7 @@ def main():
         client_id="mqtt-worker",
     )
 
-    logger.info("Starting MQTT worker loop...")
+    logger.info("MQTT worker started")
     client.start()
 
 
