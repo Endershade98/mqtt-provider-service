@@ -1,1 +1,1 @@
-# Setup Celery and redis connection
+# src/infrastructure/celery/celery_app.py

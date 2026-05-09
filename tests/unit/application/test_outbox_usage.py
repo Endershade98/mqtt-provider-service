@@ -1,77 +1,38 @@
 # tests/unit/application/test_outbox_usage.py
 
 from unittest.mock import Mock
-from datetime import datetime
-
-from src.application.use_cases.handle_telemetry import (
-    HandleTelemetryUseCase,
-    HandleTelemetryInput
-)
-from src.domain.device.entity import Device
-from src.domain.device.value_objects import DeviceId
+from src.application.use_cases.handle_telemetry import HandleTelemetryUseCase
+from src.application.use_cases.dto.handle_telemetry_dto import HandleTelemetryDTO
+from tests.unit.application.fakes.fake_unit_of_work import FakeUnitOfWork
+from tests.unit.application.fakes.fake_outbox import FakeOutbox
 
 
-def test_outbox_is_called_with_events():
+def test_outbox_is_called():
 
     device_repo = Mock()
     telemetry_repo = Mock()
-    outbox_repo = Mock()
 
-    device = Device(
-        id=DeviceId("dev-1"),
-        name="Test",
-        device_type="sensor",
-        organization="org"
-    )
+    outbox = FakeOutbox()
+    uow = FakeUnitOfWork()
 
-    device_repo.get.return_value = device
-
-    use_case = HandleTelemetryUseCase(
-        device_repo,
-        telemetry_repo,
-        outbox_repo
-    )
-
-    use_case.execute(
-        HandleTelemetryInput(
-            device_id="dev-1",
-            payload={"temp": 1},
-            received_at=datetime(2024, 1, 1, 12, 0, 0)
-        )
-    )
-
-    assert outbox_repo.save.called
-    assert len(outbox_repo.save.call_args[0][0]) >= 0
-
-
-def test_use_case_saves_events_to_outbox():
-
-    device_repo = Mock()
-    telemetry_repo = Mock()
-    outbox_repo = Mock()
-
-    device = Device(
-        id=DeviceId("dev-1"),
-        name="test",
-        device_type="sensor",
-        organization="org"
-    )
+    device = Mock()
+    device.pull_events.return_value = ["DeviceBecameOnline"]
 
     device_repo.get.return_value = device
 
     uc = HandleTelemetryUseCase(
         device_repo,
         telemetry_repo,
-        outbox_repo
+        uow,
+        outbox
     )
 
-    events = uc.execute(
-        HandleTelemetryInput(
-            device_id="dev-1",
-            payload={"temp": 10},
-            received_at=datetime(2024, 1, 1)
-        )
+    dto = HandleTelemetryDTO(
+        device_id="dev-1",
+        payload={"temp": 10},
+        received_at=None
     )
 
-    outbox_repo.save.assert_called()
-    device_repo.save.assert_called_once()
+    uc.execute(dto)
+
+    assert len(outbox.saved_events) == 1

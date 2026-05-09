@@ -1,5 +1,4 @@
 #!/bin/sh
-
 set -e
 
 echo "Waiting for database..."
@@ -8,12 +7,10 @@ while ! nc -z $DATABASE_HOST $DATABASE_PORT; do
   sleep 1
 done
 
-echo "Database available - running migrations"
-
+echo "Running migrations..."
 python manage.py migrate --noinput
 
-echo "Starting Django ASGI server"
-
+echo "Starting API server..."
 gunicorn config.asgi:application \
   -k uvicorn.workers.UvicornWorker \
   -b 0.0.0.0:8000 \

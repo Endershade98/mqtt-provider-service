@@ -1,4 +1,5 @@
 # src/domain/telemetry/events.py
+
 from dataclasses import dataclass
 
 

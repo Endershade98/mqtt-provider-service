@@ -1,18 +1,32 @@
 # src/application/use_cases/send_command.py
 
-class SendCommandUseCase:
+from src.application.use_cases.base import UseCase
+from src.application.use_cases.dto.send_command_dto import SendCommandDTO
 
-    def __init__(self, command_repository, outbox):
+from src.domain.command.entity import Command
+from src.domain.command.value_objects import CommandId
+from src.domain.device.value_objects import DeviceId
+
+
+class SendCommandUseCase(UseCase):
+
+    def __init__(self, command_repository, uow, outbox):
+        super().__init__(uow=uow, outbox=outbox)
         self.command_repository = command_repository
-        self.outbox = outbox
 
-    def execute(self, command):
+    def execute(self, dto: SendCommandDTO):
 
-        command.send()
+        with self.uow:
+            command = Command.create(
+                command_id=CommandId(dto.command_id),
+                device_id=DeviceId(dto.device_id),
+                payload=dto.payload,
+            )
 
-        events = command.pull_events()
+            command.send()
 
-        self.command_repository.save(command)
-        self.outbox.save(events)
+            self.commit(command, self.command_repository)
 
-        return events
+            self.uow.commit()
+
+            return command

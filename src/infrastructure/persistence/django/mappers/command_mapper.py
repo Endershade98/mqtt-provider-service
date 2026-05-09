@@ -1,6 +1,8 @@
 # src/infrastructure/persistence/django/mappers/command_mapper.py
+
 from src.domain.command.entity import Command
-from src.domain.device.value_objects import CommandId, DeviceId
+from src.domain.device.value_objects import DeviceId
+from src.domain.command.value_objects import CommandId, CommandStatus
 from src.infrastructure.persistence.django.models import CommandModel
 
 
@@ -12,7 +14,7 @@ class CommandMapper:
             command_id=CommandId(model.id),
             device_id=DeviceId(model.device_id),
             payload=model.payload,
-            status=model.status,
+            status=CommandStatus(model.status)
         )
 
     @staticmethod

@@ -1,1 +1,1 @@
-# Routing ASGI application for WebSocket connections
+# src/interfaces/websocket/routing.py

@@ -7,25 +7,17 @@ from src.infrastructure.persistence.django.models import TelemetryModel
 
 class DjangoTelemetryRepository:
 
-    def save(self, telemetry: Telemetry):
+    def save(self, telemetry: Telemetry) -> None:
         TelemetryModel.objects.create(
-            device_id=(
-                telemetry.device_id.value
-                if hasattr(telemetry.device_id, "value")
-                else telemetry.device_id
-            ),
+            device_id=telemetry.device_id.value,
             payload=telemetry.payload,
             received_at=telemetry.received_at,
         )
 
-    def get_all_for_device(self, device_id: DeviceId):
-        raw_id = device_id.value if hasattr(device_id, "value") else device_id
-
-        qs = (
-            TelemetryModel.objects
-            .filter(device_id=raw_id)
-            .order_by("received_at")
-        )
+    def get_all_for_device(self, device_id: DeviceId) -> list[Telemetry]:
+        qs = TelemetryModel.objects.filter(
+            device_id=device_id.value
+        ).order_by("received_at")
 
         return [
             Telemetry(

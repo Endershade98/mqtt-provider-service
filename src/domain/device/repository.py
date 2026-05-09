@@ -1,4 +1,5 @@
 # src/domain/device/repository.py
+
 from abc import ABC, abstractmethod
 from typing import Optional
 from src.domain.device.entity import Device

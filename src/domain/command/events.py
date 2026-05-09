@@ -1,4 +1,5 @@
 # src/domain/command/events.py
+
 from dataclasses import dataclass
 
 
@@ -9,7 +10,7 @@ class CommandCreated:
 @dataclass(frozen=True)
 class CommandSent:
     command_id: str
-    
+
 @dataclass(frozen=True)
 class CommandAcknowledged:
     command_id: str
@@ -18,3 +19,12 @@ class CommandAcknowledged:
 class CommandFailed:
     command_id: str
     reason: str
+
+@dataclass(frozen=True)
+class CommandRetryScheduled:
+    command_id: str
+    retry_count: int
+
+@dataclass(frozen=True)
+class CommandExpired:
+    command_id: str

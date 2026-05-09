@@ -1,26 +1,57 @@
 # src/application/use_cases/update_device_state.py
-from django.utils import timezone
-from src.domain.device.value_objects import DeviceId
+
+from datetime import datetime
+
+from src.application.use_cases.base import UseCase
+from src.application.use_cases.dto.update_device_state_dto import (
+    UpdateDeviceStateDTO,
+)
+
+from src.domain.device.value_objects import (
+    DeviceId,
+    DeviceStatus,
+)
+from src.application.exceptions import (
+    DeviceNotFoundError,
+    UnsupportedDeviceStateTransitionError,
+)
 
 
-class UpdateDeviceStateUseCase:
+class UpdateDeviceStateUseCase(UseCase):
 
-    def __init__(self, device_repository, outbox):
+    def __init__(self, device_repository, uow, outbox):
+        super().__init__(uow=uow, outbox=outbox)
         self.device_repository = device_repository
-        self.outbox = outbox
 
-    def execute(self, device_id, is_online):
+    def execute(self, dto: UpdateDeviceStateDTO):
 
-        device = self.device_repository.get(device_id)
+        with self.uow:
+            device = self.device_repository.get(
+                DeviceId(dto.device_id)
+            )
 
-        if is_online:
-            device.mark_online(timezone.now())
-        else:
-            device.mark_offline(now=timezone.now())
+            if device is None:
+                raise DeviceNotFoundError(dto.device_id)
 
-        events = device.pull_events()
+            now = datetime.utcnow()
 
-        self.device_repository.save(device)
-        self.outbox.save(events)
+            if dto.target_status == DeviceStatus.ONLINE:
+                device.mark_online(now)
 
-        return events
+            elif dto.target_status == DeviceStatus.OFFLINE:
+                device.mark_offline(now)
+
+            elif dto.target_status == DeviceStatus.STALE:
+                device.check_stale(
+                    now=now,
+                    threshold_seconds=0,
+                )
+
+            else:
+                raise UnsupportedDeviceStateTransitionError(target_status=dto.target_status)
+
+            events = self.commit(device, self.device_repository)
+
+            self.uow.commit()
+
+            return events

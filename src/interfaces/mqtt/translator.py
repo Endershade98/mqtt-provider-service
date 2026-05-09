@@ -1,46 +1,38 @@
 # src/interfaces/mqtt/translator.py
-from dataclasses import dataclass
-from src.domain.device.value_objects import Topic, DeviceId, TopicChannel
 
+from datetime import datetime
 
-@dataclass
-class TelemetryDTO:
-    device_id: DeviceId
-    payload: dict
+from src.interfaces.mqtt.topic import Topic
+from src.application.use_cases.dto.handle_telemetry_dto import HandleTelemetryDTO
+from src.application.use_cases.dto.ack_command_dto import AckCommandDTO
 
-    def key(self):
-        return "telemetry"
-
-    def handle(self, handler):
-        handler.handle_telemetry(self)
-
-
-@dataclass
-class CommandAckDTO:
-    device_id: DeviceId
-    payload: dict
-
-    def handle(self, handler):
-        handler.handle_ack(self)
 
 class MQTTMessageTranslator:
 
-    def translate(self, topic: str, payload: dict):
+    def translate_telemetry(
+        self,
+        topic: str,
+        payload: dict,
+        received_at: datetime
+    ) -> HandleTelemetryDTO:
 
         topic_vo = Topic(topic)
-        channel = topic_vo.get_channel()
-        device_id = topic_vo.get_device_id()
 
-        if channel == TopicChannel.TELEMETRY:
-            return TelemetryDTO(
-                device_id=device_id,   # VO DIRETTO
-                payload=payload
-            )
+        return HandleTelemetryDTO(
+            device_id=topic_vo.device_id.value,
+            payload=payload,
+            received_at=received_at,
+        )
 
-        if channel == TopicChannel.ACK:
-            return CommandAckDTO(
-                device_id=device_id,
-                payload=payload
-            )
+    def translate_ack(
+        self,
+        topic: str,
+        payload: dict,
+        received_at: datetime
+    ) -> AckCommandDTO:
 
-        raise ValueError(f"Unsupported channel: {channel}")
+        Topic(topic)  # validation only
+
+        return AckCommandDTO(
+            command_id=payload.get("command_id"),
+        )

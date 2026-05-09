@@ -1,3 +1,5 @@
+# src/infrastructure/persistence/django/base.py
+
 from django.db import models
 
 class BaseModel(models.Model):

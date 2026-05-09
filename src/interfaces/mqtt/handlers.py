@@ -1,38 +1,26 @@
 # src/interfaces/mqtt/handlers.py
-import logging
-from datetime import datetime
-from src.application.use_cases.handle_telemetry import HandleTelemetryInput
 
-logger = logging.getLogger(__name__)
+from src.interfaces.mqtt.translator import MQTTMessageTranslator
+from src.application.use_cases.mqtt_router import MQTTApplicationRouter
+from src.interfaces.mqtt.topic import Topic, TopicChannel
 
 
 class MQTTHandler:
 
-    def __init__(self, telemetry_uc, ack_uc, translator):
-        self.telemetry_uc = telemetry_uc
-        self.ack_uc = ack_uc
+    def __init__(self, translator: MQTTMessageTranslator, router: MQTTApplicationRouter):
         self.translator = translator
+        self.router = router
 
-    def handle(self, topic: str, payload: dict):
-        dto = self.translator.translate(topic, payload)
+    def handle(self, topic: str, payload: dict, received_at):
 
-        # POLYMORPHIC DISPATCH (DDD CLEAN)
-        dto.handle(self)
+        topic_vo = Topic(topic)
 
-    # ======================================
-    # HANDLERS (pure application routing)
-    # ======================================
-    def handle_telemetry(self, dto):
-        input_dto = HandleTelemetryInput(
-            device_id=dto.device_id,
-            payload=dto.payload,
-            received_at=datetime.utcnow()
-        )
+        if topic_vo.channel == TopicChannel.TELEMETRY:
+            dto = self.translator.translate_telemetry(topic, payload, received_at)
+            return self.router.handle_telemetry(dto)
 
-        self.telemetry_uc.execute(input_dto)
+        if topic_vo.channel == TopicChannel.ACK:
+            dto = self.translator.translate_ack(topic, payload, received_at)
+            return self.router.handle_ack(dto)
 
-    def handle_ack(self, dto):
-        self.ack_uc.execute(
-            device_id=dto.device_id,
-            payload=dto.payload
-        )
+        raise ValueError(f"Unsupported topic: {topic}")

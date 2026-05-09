@@ -1,18 +1,39 @@
 # src/application/use_cases/ack_command.py
 
-class AcknowledgeCommandUseCase:
+from src.application.ports.outbox import OutboxPort
+from src.application.ports.unit_of_work import UnitOfWork
+from src.application.use_cases.base import UseCase
+from src.application.use_cases.dto.ack_command_dto import AckCommandDTO
 
-    def __init__(self, command_repository, outbox):
+from src.domain.command.repository import CommandRepository
+from src.domain.command.value_objects import CommandId
+from src.application.exceptions import CommandNotFoundError
+
+
+class AcknowledgeCommandUseCase(UseCase):
+
+    def __init__(self, command_repository:CommandRepository, uow:UnitOfWork, outbox:OutboxPort):
+        super().__init__(uow=uow, outbox=outbox)
         self.command_repository = command_repository
-        self.outbox = outbox
 
-    def execute(self, command):
+    def execute(self, dto: AckCommandDTO):
 
-        command.ack()
+        with self.uow:
 
-        events = command.pull_events()
+            command = self.command_repository.get(
+                CommandId(dto.command_id)
+            )
 
-        self.command_repository.save(command)
-        self.outbox.save(events)
+            if command is None:
+                raise CommandNotFoundError(dto.command_id)
 
-        return events
+            command.ack()
+
+            self.commit(command, self.command_repository)
+
+            # OUTBOX EMISSION (CRITICAL FIX)
+            self.outbox.save(command.pull_events())
+
+            self.uow.commit()
+
+            return command

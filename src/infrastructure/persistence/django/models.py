@@ -1,4 +1,5 @@
 # src/infrastructure/persistence/django/models.py
+
 from django.db import models
 from .base import BaseModel
 

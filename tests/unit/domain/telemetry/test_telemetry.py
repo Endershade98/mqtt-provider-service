@@ -1,61 +1,32 @@
-# tests/unit/domain/telemetry/test_telemetry_device_integration.py
-import pytest
-from datetime import timedelta
+# tests/unit/domain/telemetry/test_telemetry.py
+
+from datetime import datetime
 from django.utils import timezone
-from src.application.services.device_service import DeviceService
-from src.domain.device.entity import Device
-from src.domain.device.value_objects import DeviceId
+
 from src.domain.telemetry.entity import Telemetry
-from src.domain.telemetry.events import TelemetryReceived
-
-service = DeviceService()
+from src.domain.device.value_objects import DeviceId
 
 
-def test_telemetry_marks_device_online():
-    device = Device(
-        id=DeviceId("dev-123"),
-        name="Test Device",
-        device_type="sensor",
-        organization="org-456"
-    )
+now = timezone.make_aware(datetime(2024, 1, 1, 12, 0, 0))
 
+
+def test_telemetry_is_valid():
     telemetry = Telemetry(
-        device_id=device.id,
-        payload={"temperature": 22.5},
-        received_at=timezone.now()
-    )
-
-    service.record_telemetry(device, telemetry)
-
-    assert device.is_online is True
-    assert device.last_seen == telemetry.received_at
-
-def test_multiple_telemetry_no_duplicate_online_event():
-    device = Device(
-        id=DeviceId("dev-123"),
-        name="Test Device",
-        device_type="sensor",
-        organization="org-456"
-    )
-
-    now = timezone.now()
-
-    telemetry1 = Telemetry(
-        device_id=device.id,
-        payload={"temperature": 22.5},
+        device_id=DeviceId("dev-1"),
+        payload={"temp": 22},
         received_at=now
     )
 
-    telemetry2 = Telemetry(
-        device_id=device.id,
-        payload={"temperature": 23.0},
-        received_at=now + timedelta(minutes=1)
-    )
-
-    service.record_telemetry(device, telemetry1)
-    service.record_telemetry(device, telemetry2)
-
-    assert device.is_online is True
-    assert device.last_seen == telemetry2.received_at
+    assert telemetry.payload == {"temp": 22}
 
 
+def test_empty_payload_invalid():
+    import pytest
+    from src.domain.shared.exceptions import TelemetryValidationError
+
+    with pytest.raises(TelemetryValidationError):
+        Telemetry(
+            device_id=DeviceId("dev-1"),
+            payload={},
+            received_at=now
+        )

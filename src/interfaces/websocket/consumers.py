@@ -1,1 +1,1 @@
-# conections to websocket and handling messages
+# src/interfaces/websocket/consumers.py
